@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "556115136457",
+    "project_id": "menanetrepots",
+    "storage_bucket": "menanetrepots.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556115136457:android:15cb0f791045fc72e3a218",
+        "android_client_info": {
+          "package_name": "com.example.meganetreports"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "556115136457-hervn217il2fe9ufo9qatjsqq4jc7o8g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBObzqk5VnhNrtaM99N0PkuYwHZIEkkd0g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "556115136457-hervn217il2fe9ufo9qatjsqq4jc7o8g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
