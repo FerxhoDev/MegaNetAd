@@ -110,10 +110,16 @@ class _BodyWhiteState extends State<BodyWhite> {
             SizedBox(
               height: 50.h,
             ),
-            const Text(
-              'Olvidaste tu contraseña?',
-              style: TextStyle(color: Colors.grey),
-            ),
+             GestureDetector(
+                onTap: () {
+                  // Navegar a la pantalla de recuperar contraseña
+                  context.go('/forgotpassword');
+                },
+               child: const Text(
+                'Olvidaste tu contraseña?',
+                style: TextStyle(color: Colors.grey),
+                           ),
+             ),
             SizedBox(
               height: 40.h,
             ),
@@ -172,7 +178,7 @@ class _BodyWhiteState extends State<BodyWhite> {
 GestureDetector(
   onTap: () {
     // Navegar a la pantalla de registro
-    context.go('/home/signup');
+    context.go('/signup');
   },
   child: const Row(
     children: [

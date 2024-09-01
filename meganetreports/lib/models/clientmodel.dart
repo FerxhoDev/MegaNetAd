@@ -1,7 +1,7 @@
-class User {
+class Users {
   String name;
   int age;
   String email;
 
-  User({required this.name, required this.age, required this.email});
+  Users({required this.name, required this.age, required this.email});
 }

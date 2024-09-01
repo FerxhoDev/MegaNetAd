@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meganetreports/presentation/screens/home/HomeScreen.dart';
 //import 'package:go_router/go_router.dart';
 
 class BodyWhitesg extends StatefulWidget {
@@ -15,32 +17,64 @@ class BodyWhitesg extends StatefulWidget {
 }
 
 class _BodyWhiteState extends State<BodyWhitesg> {
+
+  String email="", password="", name="";
+
   // Text controllers
+  final _usercontroller = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  Future signIn() async {
+  final _formKey = GlobalKey<FormState>();
+
+  registration() async {
+  if (_usercontroller.text.isNotEmpty && _emailController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text, password: _passwordController.text);
+      // Crear usuario con Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Obtener el ID del usuario registrado
+      String uid = userCredential.user!.uid;
+
+      // Guardar información adicional en Firestore
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': name,
+        'email': email,
+      });
+
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Usuario registrado correctamente.'),
+        ),
+      );
+
+      // Navegar a la pantalla de inicio
       context.go('/home');
-      //GoRouter.of(context).go('/home');
-    } on FirebaseAuthException catch (e) { 
-      if (e.code == 'user-not-found') {
+
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No hay usuario para este correo.'),
+            content: Text('La contraseña es muy débil.'),
           ),
         );
-      } else if (e.code == 'wrong-password') {
+      } else if (e.code == 'email-already-in-use') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Contraseña incorrecta.'),
+            content: Text('El correo ya está en uso.'),
           ),
         );
       }
+    } catch (e) {
+      print(e);
     }
   }
+}
+
 
   @override
   void dispose() {
@@ -75,49 +109,70 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                         blurRadius: 20,
                         offset: Offset(0, 10))
                   ]),
-              child: Column(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10.h),
-                    decoration: BoxDecoration(
-                        border: Border(
-                            bottom: BorderSide(color: Colors.grey[200]!))),
-                    child: TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                          hintText: 'Nombre',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10.h),
+                      decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(color: Colors.grey[200]!))),
+                      child: TextFormField(
+                        validator: (value){
+                          if(value!.isEmpty){
+                            return 'Por favor ingrese un nombre';
+                          }
+                          return null;
+                        },
+                        controller: _usercontroller,
+                        decoration: const InputDecoration(
+                            hintText: 'Nombre',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            border: InputBorder.none),
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(10.h),
-                    decoration: BoxDecoration(
-                        border: Border(
-                            bottom: BorderSide(color: Colors.grey[200]!))),
-                    child: TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                          hintText: 'Correo',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none),
+                    Container(
+                      padding: EdgeInsets.all(10.h),
+                      decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(color: Colors.grey[200]!))),
+                      child: TextFormField(
+                         validator: (value){
+                          if(value!.isEmpty){
+                            return 'Por favor ingrese un correo';
+                          }
+                          return null;
+                        },
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                            hintText: 'Correo',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            border: InputBorder.none),
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(10.h),
-                    decoration: BoxDecoration(
-                        border: Border(
-                            bottom: BorderSide(color: Colors.grey[200]!))),
-                    child: TextField(
-                      obscureText: true,
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                          hintText: 'Contraseña',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none),
+                    Container(
+                      padding: EdgeInsets.all(10.h),
+                      decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(color: Colors.grey[200]!))),
+                      child: TextFormField(
+                         validator: (value){
+                          if(value!.isEmpty){
+                            return 'Por favor ingrese un nombre';
+                          }
+                          return null;
+                        },
+                        obscureText: true,
+                        controller: _passwordController,
+                        decoration: const InputDecoration(
+                            hintText: 'Contraseña',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            border: InputBorder.none),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             
@@ -132,7 +187,14 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                   color: Colors.blue[800],
                   child: InkWell(
                     onTap: () {
-                      signIn();
+                      if (_formKey.currentState!.validate()) {
+                        setState(() {
+                          email = _emailController.text;
+                          password = _passwordController.text;
+                          name = _usercontroller.text;
+                        });
+                      }
+                      registration();
                     },
                     child: Padding(
                       padding: EdgeInsets.symmetric(
