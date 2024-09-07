@@ -4,8 +4,6 @@ import 'package:meganetreports/models/incidentsmodel.dart';
 import 'package:meganetreports/presentation/screens/DashBoard/dashboard.dart';
 import 'package:meganetreports/presentation/screens/articles/inventary.dart';
 import 'package:meganetreports/presentation/screens/fotgotpassword/forgotpassword.dart';
-//import 'package:meganetreports/main_page.dart';
-import 'package:meganetreports/presentation/screens/home/HomeScreen.dart';
 import 'package:meganetreports/presentation/screens/info__incidents/incidents_screen.dart';
 import 'package:meganetreports/presentation/screens/login/components/login.dart';
 import 'package:meganetreports/presentation/screens/signup/signup.dart';

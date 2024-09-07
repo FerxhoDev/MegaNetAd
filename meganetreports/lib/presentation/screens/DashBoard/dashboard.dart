@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -117,11 +118,149 @@ class _DashboardState extends State<Dashboard> {
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     child: VerClients()                    
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    child: Container(
+                      width: double.infinity,
+                      height: 200.h,
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 37, 37, 37),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          const EditarPago(),
+                          Container(
+                            width: 200.w,
+                            height: 150.h,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                            color: Color.fromARGB(255, 57, 57, 57),
+                            ),
+                          ),
+                          Container(
+                            width: 200.w,
+                            height: 150.h,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color.fromRGBO(35, 122, 252, 1),
+                                  Color.fromRGBO(59, 151, 244, 1),
+                                ],
+                              ),
+                            ),
+                            child: 
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.my_library_add_rounded, color: Colors.white60, size: 45.sp,),
+                                  Text('Nuevo Pago', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
+                                ],
+                              ),
+                          ),
+                        ],
+                      ),
+                    ),           
+                  ),  
+                  SizedBox(height: 70.h, child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 22.w),
+                    child: const Row(
+                      children: [
+                        Text('Últimos Pagos', style: TextStyle(color: Colors.white),),
+                        Spacer(),
+                        Text('Ver todos...', style: TextStyle(color: Colors.white60),),
+                      ],
+                    ),
+                  ),),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: double.infinity,
+                      height: 400.h,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.r),
+                        color:  const Color.fromARGB(255, 37, 37, 37),
+                      ),
+                      child: ListView(
+                        children:[
+                          ListTile(
+                            tileColor: Color.fromARGB(255, 231, 94, 94),
+                            title: const Text('Paula López', style: TextStyle(color: Colors.white70),),
+                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
+                            leading: const Icon(Icons.person),
+                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
+                            style: ListTileStyle.drawer,
+                          ),
+                          //const Divider(),
+                          ListTile(
+                            title: const Text('Conni Paz', style: TextStyle(color: Colors.white70),),
+                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
+                            leading: const Icon(Icons.person),
+                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
+                          ),
+                          //const Divider(),
+                          ListTile(
+                            title: const Text('Rosa Díaz', style: TextStyle(color: Colors.white70),),
+                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
+                            leading: const Icon(Icons.person),
+                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
+                          ),
+                          //const Divider(),
+                          ListTile(
+                            title: const Text('Erick Méndez', style: TextStyle(color: Colors.white70),),
+                            subtitle: const Text('Plus', style: TextStyle(color: Colors.white54),),
+                            leading: const Icon(Icons.person),
+                            trailing: Text('+ Q300', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
+                          ),
+                          //const Divider(),
+                          ListTile(
+                            title: const Text('Jaime López', style: TextStyle(color: Colors.white70),),
+                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
+                            leading: const Icon(Icons.person),
+                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
+                          ),
+                          //const Divider(),
+                        ],
+                      ),
+                    ),
+                  )                
                 ],
               )
             ),
+            
           ],
         )
+      ),
+    );
+  }
+}
+
+class EditarPago extends StatelessWidget {
+  const EditarPago({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 200.w,
+      height: 150.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: Color.fromARGB(255, 57, 57, 57),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.content_paste, color: Colors.white60, size: 45.sp,),
+          Text('Planes', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
+        ],
       ),
     );
   }
