@@ -16,69 +16,80 @@ class BodyWhitesg extends StatefulWidget {
 }
 
 class _BodyWhiteState extends State<BodyWhitesg> {
-
-  String email="", password="", name="";
+  String email = "", password = "", name = "", adminCode = "";
+  bool isAdmin = false;
 
   // Text controllers
   final _usercontroller = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _adminCodeController = TextEditingController(); // Nuevo controller para el código de administrador
 
   final _formKey = GlobalKey<FormState>();
 
   registration() async {
-  if (_usercontroller.text.isNotEmpty && _emailController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
-    try {
-      // Crear usuario con Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    if (_usercontroller.text.isNotEmpty &&
+        _emailController.text.isNotEmpty &&
+        _passwordController.text.isNotEmpty &&
+        (!isAdmin || (isAdmin && _adminCodeController.text == "12345"))) {
+      try {
+        // Crear usuario con Firebase Authentication
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
 
-      // Obtener el ID del usuario registrado
-      String uid = userCredential.user!.uid;
+        // Obtener el ID del usuario registrado
+        String uid = userCredential.user!.uid;
 
-      // Guardar información adicional en Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'name': name,
-        'email': email,
-      });
+        // Guardar información adicional en Firestore
+        await FirebaseFirestore.instance.collection('users').doc(uid).set({
+          'name': name,
+          'email': email,
+          'isAdmin': isAdmin, // Guardar si es administrador
+        });
 
-      // Mostrar mensaje de éxito
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Usuario registrado correctamente.'),
+          ),
+        );
+
+        // Navegar a la pantalla de inicio
+        context.go('/home');
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'weak-password') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('La contraseña es muy débil.'),
+            ),
+          );
+        } else if (e.code == 'email-already-in-use') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('El correo ya está en uso.'),
+            ),
+          );
+        }
+      } catch (e) {
+        print(e);
+      }
+    } else if (isAdmin && _adminCodeController.text != "12345") {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Usuario registrado correctamente.'),
+          content: Text('Código de administrador incorrecto.'),
         ),
       );
-
-      // Navegar a la pantalla de inicio
-      context.go('/home');
-
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('La contraseña es muy débil.'),
-          ),
-        );
-      } else if (e.code == 'email-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('El correo ya está en uso.'),
-          ),
-        );
-      }
-    } catch (e) {
-      print(e);
     }
   }
-}
-
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _adminCodeController.dispose(); // Limpiar controller
     super.dispose();
   }
 
@@ -96,7 +107,7 @@ class _BodyWhiteState extends State<BodyWhitesg> {
         padding: EdgeInsets.all(40.h),
         child: Column(
           children: [
-            SizedBox(height: 50.h),
+            SizedBox(height: 30.h),
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -112,14 +123,15 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    // Campo Nombre
                     Container(
                       padding: EdgeInsets.all(10.h),
                       decoration: BoxDecoration(
                           border: Border(
                               bottom: BorderSide(color: Colors.grey[200]!))),
                       child: TextFormField(
-                        validator: (value){
-                          if(value!.isEmpty){
+                        validator: (value) {
+                          if (value!.isEmpty) {
                             return 'Por favor ingrese un nombre';
                           }
                           return null;
@@ -131,14 +143,15 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                             border: InputBorder.none),
                       ),
                     ),
+                    // Campo Correo
                     Container(
                       padding: EdgeInsets.all(10.h),
                       decoration: BoxDecoration(
                           border: Border(
                               bottom: BorderSide(color: Colors.grey[200]!))),
                       child: TextFormField(
-                         validator: (value){
-                          if(value!.isEmpty){
+                        validator: (value) {
+                          if (value!.isEmpty) {
                             return 'Por favor ingrese un correo';
                           }
                           return null;
@@ -150,15 +163,16 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                             border: InputBorder.none),
                       ),
                     ),
+                    // Campo Contraseña
                     Container(
                       padding: EdgeInsets.all(10.h),
                       decoration: BoxDecoration(
                           border: Border(
                               bottom: BorderSide(color: Colors.grey[200]!))),
                       child: TextFormField(
-                         validator: (value){
-                          if(value!.isEmpty){
-                            return 'Por favor ingrese un nombre';
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Por favor ingrese una contraseña';
                           }
                           return null;
                         },
@@ -170,14 +184,65 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                             border: InputBorder.none),
                       ),
                     ),
+                    SizedBox(
+                      height: 20.h,
+                    ),
+                    // Switch para Administrador
+                    Row(
+                      children: [
+                        Switch(
+                          activeColor: Color.fromRGBO(13, 71, 161, 1),
+                          inactiveThumbColor: Colors.grey,
+                          inactiveTrackColor: Colors.grey[200],                          
+                          value: isAdmin,
+                          onChanged: (value) {
+                            setState(() {
+                              isAdmin = value;
+                            });
+                          },
+                        ),
+                        SizedBox(
+                          width: 10.w,
+                        ),
+                        Text(
+                          "Eres Administrador?",
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 25.sp,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    // Campo para el código de administrador (solo visible si isAdmin es true)
+                    if (isAdmin)
+                      Container(
+                        padding: EdgeInsets.all(10.h),
+                        decoration: BoxDecoration(
+                            border: Border(
+                                bottom:
+                                    BorderSide(color: Colors.grey[200]!))),
+                        child: TextFormField(
+                          controller: _adminCodeController,
+                          decoration: const InputDecoration(
+                              hintText: 'Código de administrador',
+                              hintStyle: TextStyle(color: Colors.grey),
+                              border: InputBorder.none),
+                          validator: (value) {
+                            if (isAdmin && value!.isEmpty) {
+                              return 'Por favor ingrese el código de administrador';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
-            
             SizedBox(
-              height: 80.h,
-            ),            
+              height: 40.h,
+            ),
+            // Botón para registrarse
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 100.w),
               child: ClipRRect(
@@ -192,8 +257,8 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                           password = _passwordController.text;
                           name = _usercontroller.text;
                         });
+                        registration();
                       }
-                      registration();
                     },
                     child: Padding(
                       padding: EdgeInsets.symmetric(
@@ -215,13 +280,20 @@ class _BodyWhiteState extends State<BodyWhitesg> {
             SizedBox(
               height: 80.h,
             ),
+            // Link para iniciar sesión
             Row(
               children: [
-                const Text('Ya tienes una cuenta?', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),),
-                SizedBox(width: 20.w,),
+                const Text(
+                  'Ya tienes una cuenta?',
+                  style: TextStyle(
+                      color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(
+                  width: 20.w,
+                ),
                 GestureDetector(
                   onTap: () {
-                    // Navegar a la pantalla de registro
+                    // Navegar a la pantalla de login
                     context.go('/');
                   },
                   child: const Row(
@@ -229,7 +301,8 @@ class _BodyWhiteState extends State<BodyWhitesg> {
                       Text(
                         'Inicia sesión',
                         style: TextStyle(
-                          color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

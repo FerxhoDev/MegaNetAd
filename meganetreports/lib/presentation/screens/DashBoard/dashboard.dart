@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -81,6 +80,7 @@ class _DashboardState extends State<Dashboard> {
                     onPressed: () {
                       // Cerrar sesión
                       FirebaseAuth.instance.signOut();
+                      context.go('/');
                     },
                     icon: const Icon(
                       Icons.logout,
@@ -109,7 +109,7 @@ class _DashboardState extends State<Dashboard> {
                       children: [
                         SizedBox(width: 5.w),
                         const TotalDia(),
-                        SizedBox(width: 20.w),
+                        SizedBox(width: 16.w),
                         const TotalMes()
                       ],
                     ),
@@ -139,29 +139,35 @@ class _DashboardState extends State<Dashboard> {
                             color: Color.fromARGB(255, 57, 57, 57),
                             ),
                           ),
-                          Container(
-                            width: 200.w,
-                            height: 150.h,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(18),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color.fromRGBO(35, 122, 252, 1),
-                                  Color.fromRGBO(59, 151, 244, 1),
-                                ],
+                          GestureDetector(
+                            onTap: () {
+                              // Navegar a la pantalla de nuevo pago
+                              context.go('/home/NPago');
+                            },
+                            child: Container(
+                              width: 200.w,
+                              height: 150.h,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color.fromRGBO(35, 122, 252, 1),
+                                    Color.fromRGBO(59, 151, 244, 1),
+                                  ],
+                                ),
                               ),
+                              child: 
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.my_library_add_rounded, color: Colors.white60, size: 45.sp,),
+                                    Text('Nuevo Pago', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
+                                  ],
+                                ),
                             ),
-                            child: 
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.my_library_add_rounded, color: Colors.white60, size: 45.sp,),
-                                  Text('Nuevo Pago', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
-                                ],
-                              ),
                           ),
                         ],
                       ),
@@ -247,20 +253,26 @@ class EditarPago extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 200.w,
-      height: 150.h,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: Color.fromARGB(255, 57, 57, 57),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.content_paste, color: Colors.white60, size: 45.sp,),
-          Text('Planes', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
-        ],
+    return GestureDetector(
+      onTap: () {
+        // Navegar a la pantalla de planes
+        context.go('/home/planes');
+      },
+      child: Container(
+        width: 200.w,
+        height: 150.h,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: const Color.fromARGB(255, 57, 57, 57),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.content_paste, color: Colors.white60, size: 45.sp,),
+            Text('Planes', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
+          ],
+        ),
       ),
     );
   }
@@ -273,32 +285,35 @@ class VerClients extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 100.h,
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 37, 37, 37),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(width: 20.w),
-          Icon(
-            Icons.groups_2,
-            color: Colors.white60,
-            size: 60.sp,
-          ),
-          SizedBox(width: 20.w),
-          const Text('Cllientes', style: TextStyle(color: Colors.white60, fontWeight: FontWeight.bold),),
-          const Spacer(),
-          Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.white60,
-            size: 30.sp,
-          ),
-          SizedBox(width: 20.w),
-        ],
+    return GestureDetector(
+      onTap: () => context.go('/home/Clients'),
+      child: Container(
+        width: double.infinity,
+        height: 100.h,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 37, 37, 37),
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(width: 20.w),
+            Icon(
+              Icons.groups_2,
+              color: Colors.white60,
+              size: 60.sp,
+            ),
+            SizedBox(width: 20.w),
+            const Text('Cllientes', style: TextStyle(color: Colors.white60, fontWeight: FontWeight.bold),),
+            const Spacer(),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white60,
+              size: 30.sp,
+            ),
+            SizedBox(width: 20.w),
+          ],
+        ),
       ),
     );
   }
@@ -330,7 +345,7 @@ class TotalMes extends StatelessWidget {
                 ),
                  const SizedBox(width: 10),
                  Text(
-                  'Total del día',
+                  'Total del mes',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20.sp,

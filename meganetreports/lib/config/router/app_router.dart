@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meganetreports/models/incidentsmodel.dart';
+import 'package:meganetreports/presentation/screens/Clients/clients.dart';
 import 'package:meganetreports/presentation/screens/DashBoard/dashboard.dart';
-import 'package:meganetreports/presentation/screens/articles/inventary.dart';
+import 'package:meganetreports/presentation/screens/Pagos/pagos.dart';
+import 'package:meganetreports/presentation/screens/Planes/planes.dart';
 import 'package:meganetreports/presentation/screens/fotgotpassword/forgotpassword.dart';
 import 'package:meganetreports/presentation/screens/info__incidents/incidents_screen.dart';
 import 'package:meganetreports/presentation/screens/login/components/login.dart';
@@ -41,6 +43,28 @@ final GoRouter appRouter = GoRouter(
           builder: (BuildContext context, GoRouterState state) {
             return const Dashboard();
           },
+          routes: [
+            GoRoute(
+              path: 'NPago',
+              name: 'NPago',
+              builder: (BuildContext context, GoRouterState state) {
+                return const PagoScreen();               },
+            ),
+            GoRoute(
+              path: 'clients',
+              name: 'clients',
+              builder: (BuildContext context, GoRouterState state) {
+                return const Clients();
+              },
+            ),
+            GoRoute(
+              path: 'planes',
+              name: 'planes',
+              builder: (BuildContext context, GoRouterState state) {
+                return const Planes();
+              },
+            ),
+          ],
         ),GoRoute(
               path: '/info_incidents',
               name: 'info_incidents',
@@ -49,13 +73,7 @@ final GoRouter appRouter = GoRouter(
                 return InsidentsScreen(snapshot: snapshot);
               },
             ),
-            GoRoute(
-              path: '/inventary',
-              name: 'inventary',
-              builder: (BuildContext context, GoRouterState state) {
-                return const InventaryScreen();
-              },
-            ),
+            
              
             
        

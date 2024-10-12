@@ -4,9 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:meganetreports/config/router/app_router.dart';
-//import 'package:meganetreports/screens/home/HomeScreen.dart';
-//import 'package:meganetreports/presentation/screens/login/components/login.dart';
-//import 'package:go_router/go_router.dart';
+
 
 
 void main () async{
