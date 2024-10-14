@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class Cliente {
   final String nombre;
@@ -69,7 +70,8 @@ class Clients extends StatelessWidget {
                 final cliente = clientes[index];
                 return Card(
                   color: const Color.fromARGB(255, 50, 50, 50),
-                  margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                  margin:
+                      EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                   child: ListTile(
                     title: Text(
                       cliente.nombre,
@@ -94,7 +96,9 @@ class Clients extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color.fromRGBO(13, 71, 161, 1),
         ),
-        onPressed: () {},
+        onPressed: () {
+          context.goNamed('AddClients');
+        },
         label: const Text(
           'Agregar Cliente',
           style: TextStyle(color: Colors.white60),

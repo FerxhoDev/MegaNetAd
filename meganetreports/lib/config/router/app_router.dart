@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meganetreports/models/incidentsmodel.dart';
+import 'package:meganetreports/presentation/screens/Clients/addClient.dart';
 import 'package:meganetreports/presentation/screens/Clients/clients.dart';
 import 'package:meganetreports/presentation/screens/DashBoard/dashboard.dart';
 import 'package:meganetreports/presentation/screens/Pagos/pagos.dart';
@@ -56,6 +57,14 @@ final GoRouter appRouter = GoRouter(
               builder: (BuildContext context, GoRouterState state) {
                 return const Clients();
               },
+              routes: [
+                GoRoute(
+                  path: 'AddClients',
+                  name: 'AddClients',
+                  builder: (BuildContext context, GoRouterState state) {
+                  return const AddClients();               },
+                ),
+              ]
             ),
             GoRoute(
               path: 'planes',
