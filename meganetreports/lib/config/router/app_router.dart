@@ -70,7 +70,7 @@ final GoRouter appRouter = GoRouter(
               path: 'planes',
               name: 'planes',
               builder: (BuildContext context, GoRouterState state) {
-                return const Planes();
+                return Planes();
               },
             ),
           ],
