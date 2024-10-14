@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
           routerConfig: appRouter,
           debugShowCheckedModeBanner: false,
           title: 'MegaNet',
-          theme: ThemeData(
+          theme: ThemeData(                                            
             primarySwatch: Colors.blue,
           ),
         );
