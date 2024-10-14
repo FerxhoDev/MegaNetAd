@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Plan {
@@ -39,16 +37,56 @@ class _AddClientsState extends State<AddClients> {
   Plan? selectedPlan;
 
   // Método para obtener los planes de Firestore
-Future<List<Plan>> _fetchPlans() async {
-  QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('planes').get();
-  return snapshot.docs.map((doc) {
-    return Plan(
-      name: doc['nombre'] as String,
-      price: doc['precio'] as String, // Convierte a double, o 0.0 si falla
-    );
-  }).toList();
-}
+  Future<List<Plan>> _fetchPlans() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('planes').get();
+    return snapshot.docs.map((doc) {
+      return Plan(
+        name: doc['nombre'] as String,
+        price: doc['precio'] as String,
+      );
+    }).toList();
+  }
 
+  // Función para guardar cliente en Firestore
+  Future<void> _saveClient() async {
+    if (nameController.text.isEmpty || phoneController.text.isEmpty || selectedPlan == null) {
+      // Muestra un mensaje de error si alguno de los campos está vacío
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, completa todos los campos.')),
+      );
+      return;
+    }
+
+    // Datos del cliente a guardar
+    Map<String, dynamic> clientData = {
+      'nombre': nameController.text,
+      'telefono': phoneController.text,
+      'plan_nombre': selectedPlan!.name,
+      'plan_precio': selectedPlan!.price,
+    };
+
+    try {
+      // Guarda el cliente en la colección 'clientes' de Firestore
+      await FirebaseFirestore.instance.collection('clientes').add(clientData);
+
+      // Muestra un mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cliente guardado exitosamente.')),
+      );
+
+      // Limpia los campos después de guardar
+      nameController.clear();
+      phoneController.clear();
+      setState(() {
+        selectedPlan = null;
+      });
+    } catch (e) {
+      // En caso de error, muestra un mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar cliente: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +201,7 @@ Future<List<Plan>> _fetchPlans() async {
                           return DropdownMenuItem<Plan>(
                             value: plan,
                             child: Text(
-                              '${plan.name} - \Q${plan.price}', // Muestra el nombre y el precio
+                              '${plan.name} - Q${plan.price}', // Muestra el nombre y el precio
                               style: const TextStyle(color: Colors.white), // Color del texto dentro de las opciones
                             ),
                           );
@@ -204,12 +242,7 @@ Future<List<Plan>> _fetchPlans() async {
                         Icons.group_add_rounded,
                         color: Colors.white70,
                       ),
-                      onPressed: () {
-                        // Aquí puedes manejar la lógica para guardar los datos
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Cliente Agregado')),
-                        );
-                      },
+                      onPressed: _saveClient, // Llama a la función para guardar
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromRGBO(13, 71, 161, 1),
                         padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
