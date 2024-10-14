@@ -193,6 +193,7 @@ Future<List<Plan>> _fetchPlans() async {
                         borderSide: BorderSide(color: Color.fromRGBO(13, 71, 161, 1)), // Borde azul cuando tiene foco
                       ),
                     ),
+                    style: const TextStyle(color: Colors.white),
                   ),
                   SizedBox(height: 60.h),
 
