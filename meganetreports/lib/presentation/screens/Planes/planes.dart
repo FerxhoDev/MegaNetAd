@@ -40,6 +40,111 @@ class _PlanesState extends State<Planes> {
     priceController.clear();
   }
 
+  // Método para actualizar un plan en Firestore
+  Future<void> _updatePlan(String docId, String nombre, String precio) async {
+    nameController.text = nombre;
+    priceController.text = precio;
+
+    // Abrir un diálogo para editar
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          icon: const Icon(Icons.edit, color:Color.fromRGBO(35, 122, 252, 1)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          backgroundColor: const Color.fromARGB(255, 37, 37, 37),
+          title: const Text('Editar Plan', style: TextStyle(color: Colors.white70),),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  labelStyle: TextStyle(color: Colors.white70),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color.fromRGBO(26, 106, 226, 1), // Línea inferior azul cuando está en foco
+                    ),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.white70, // Línea inferior blanca cuando no está en foco
+                    ),
+                  ),
+                ),
+                style: const TextStyle(color: Colors.white70),
+                
+              ),
+              TextField(
+                controller: priceController,
+                decoration: const InputDecoration(
+                  labelText: 'Precio',
+                  labelStyle: TextStyle(color: Colors.white70),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Color.fromRGBO(26, 106, 226, 1),// Línea inferior azul cuando está en foco
+                    ),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.white70, // Línea inferior blanca cuando no está en foco
+                    ),
+                  ),
+                ),
+                style: const TextStyle(color: Colors.white70),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancelar', style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold),),
+            ),
+            TextButton(
+              onPressed: () async {
+                String newNombre = nameController.text;
+                String newPrecio = priceController.text;
+
+                if (newNombre.isNotEmpty && newPrecio.isNotEmpty) {
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('planes')
+                        .doc(docId)
+                        .update({
+                      'nombre': newNombre,
+                      'precio': newPrecio,
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Plan actualizado')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error al actualizar el plan: $e')),
+                    );
+                  }
+
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Por favor, llena todos los campos')),
+                  );
+                }
+              },
+              child: Text('Guardar', style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold),),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,6 +161,7 @@ class _PlanesState extends State<Planes> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Parte superior para añadir nuevos planes
             Container(
               width: double.infinity,
               height: 400.h,
@@ -141,6 +247,8 @@ class _PlanesState extends State<Planes> {
                 ],
               ),
             ),
+
+            // Parte inferior con la lista de planes
             Container(
               width: double.infinity,
               height: 740.h,
@@ -153,7 +261,6 @@ class _PlanesState extends State<Planes> {
               ),
               child: Padding(
                 padding: EdgeInsets.only(top: 40.w, left: 10.w, right: 10.w),
-                // Usamos StreamBuilder para obtener los planes de Firestore
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance.collection('planes').snapshots(),
                   builder: (context, snapshot) {
@@ -169,6 +276,7 @@ class _PlanesState extends State<Planes> {
                         var planData = planes[index].data() as Map<String, dynamic>;
                         String nombre = planData['nombre'];
                         String precio = planData['precio'];
+                        String docId = planes[index].id;
 
                         return Card(
                           color: const Color.fromARGB(255, 37, 37, 37),
@@ -182,9 +290,12 @@ class _PlanesState extends State<Planes> {
                               'Precio: Q$precio',
                               style: const TextStyle(color: Colors.white60),
                             ),
-                            trailing: const Icon(
-                              Icons.edit,
-                              color: Colors.white70,
+                            trailing: IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.white70),
+                              onPressed: () {
+                                // Llama al método para actualizar el plan
+                                _updatePlan(docId, nombre, precio);
+                              },
                             ),
                           ),
                         );
