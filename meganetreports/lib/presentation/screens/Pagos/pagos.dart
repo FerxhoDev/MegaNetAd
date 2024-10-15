@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 Future<void> savePayment({
   required String clientId, // ID del cliente
@@ -36,6 +37,43 @@ Future<void> savePayment({
     print('Pago guardado correctamente');
   } catch (e) {
     print('Error al guardar el pago: $e');
+  }
+}
+
+String getNextMonth(String lastPaymentMonth) {
+  // Separar el mes y el año del string de entrada
+  final parts = lastPaymentMonth.split(' ');
+  final monthString = parts[0];
+  final year = int.parse(parts[1]);
+
+  // Crear un mapa de los meses
+  const monthMap = {
+    'Enero': 1,
+    'Febrero': 2,
+    'Marzo': 3,
+    'Abril': 4,
+    'Mayo': 5,
+    'Junio': 6,
+    'Julio': 7,
+    'Agosto': 8,
+    'Septiembre': 9,
+    'Octubre': 10,
+    'Noviembre': 11,
+    'Diciembre': 12,
+  };
+
+  // Obtener el número del mes actual
+  int currentMonth = monthMap[monthString] ?? 1;
+
+  // Calcular el siguiente mes y el año correspondiente
+  if (currentMonth == 12) {
+    // Si es diciembre, el siguiente mes es enero del siguiente año
+    return 'Enero ${year + 1}';
+  } else {
+    // En cualquier otro caso, solo aumentamos el mes
+    int nextMonth = currentMonth + 1;
+    String nextMonthString = monthMap.keys.elementAt(nextMonth - 1);
+    return '$nextMonthString $year';
   }
 }
 
@@ -122,13 +160,44 @@ class PagoScreen extends StatelessWidget {
                       SizedBox(height: 100.h),
                       GestureDetector(
                         onTap: () {
-                          savePayment(
-                            clientId: clientId,
-                            fechaPago: DateTime.now(),
-                            mesPago: 'Marzo 2024',
-                            total: precio,
-                          );
-                          Navigator.pop(context);
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  icon: const Icon(Icons.save_as_rounded,
+                                      color: Color.fromRGBO(35, 122, 252, 1)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 37, 37, 37),
+                                  title: const Text('Confirmar Pago', style: TextStyle(color: Colors.white70),),
+                                  content: const Text(
+                                      '¿Estás seguro de que deseas realizar el pago?', style: TextStyle(color: Colors.white70),),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancelar', style: TextStyle(color: Colors.blue),),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        String mesPagoAnterior =
+                                            ultimoPago['mespago'] ?? '';
+                                        String siguienteMes =
+                                            getNextMonth(mesPagoAnterior);
+                                        savePayment(
+                                          clientId: clientId,
+                                          fechaPago: DateTime.now(),
+                                          mesPago: siguienteMes,
+                                          total: precio,
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('Aceptar', style: TextStyle(color: Colors.blue)),
+                                    ),
+                                  ],
+                                );
+                              });
                         },
                         child: Container(
                           height: 100.h,
@@ -237,7 +306,7 @@ class InfoClient extends StatelessWidget {
 class Infopago extends StatelessWidget {
   final String plan;
   final String precio;
-  final  Map<String, dynamic> mes;
+  final Map<String, dynamic> mes;
   const Infopago({
     super.key,
     required this.plan,
@@ -247,7 +316,8 @@ class Infopago extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mesPago = mes['mespago'] ?? 'N/A';
+    final mesPagoAnterior = mes['mespago'] ?? 'N/A';
+    String siguienteMes = getNextMonth(mesPagoAnterior);
     return Container(
       height: 330.h,
       width: 660.w,
@@ -289,7 +359,7 @@ class Infopago extends StatelessWidget {
                       size: 50.r,
                     ),
                     Text(
-                      '$mesPago',
+                      siguienteMes,
                       style: TextStyle(
                           color: Colors.white60,
                           fontSize: 25.sp,
