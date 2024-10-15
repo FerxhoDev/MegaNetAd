@@ -142,7 +142,7 @@ class _DashboardState extends State<Dashboard> {
                           GestureDetector(
                             onTap: () {
                               // Navegar a la pantalla de nuevo pago
-                              context.go('/home/NPago');
+                              context.goNamed('ListPago');
                             },
                             child: Container(
                               width: 200.w,
