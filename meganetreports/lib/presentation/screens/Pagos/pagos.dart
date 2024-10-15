@@ -4,8 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PagoScreen extends StatelessWidget {
-  final clientId;
+  final String clientId;
   const PagoScreen({super.key, required this.clientId});
+
+  Future<Map<String, dynamic>?> _getClientData() async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('clientes')
+        .doc(clientId)
+        .get();
+    return doc.data() as Map<String, dynamic>?;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,74 +25,82 @@ class PagoScreen extends StatelessWidget {
         37,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            const Retun(),
-            Container(
-              height: 1152.h,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 26, 26, 26),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(50.r),
-                  topRight: Radius.circular(50.r),
-                ),
-              ),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 20.h,
+        child: FutureBuilder<Map<String, dynamic>?>(
+          future: _getClientData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return const Center(child: Text('Error al cargar datos'));
+            } else if (!snapshot.hasData || snapshot.data == null) {
+              return const Center(child: Text('No se encontraron datos'));
+            }
+
+            final clientData = snapshot.data!;
+            final nombre = clientData['nombre'] ?? 'Cliente Desconocido';
+            final plan = clientData['plan_nombre'] ?? 'Plan Desconocido';
+            final precio = clientData['plan_precio'] ?? '0.00';
+
+            return Column(
+              children: [
+                const Retun(),
+                Container(
+                  height: 1152.h,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 26, 26, 26),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(50.r),
+                      topRight: Radius.circular(50.r),
+                    ),
                   ),
-                  SizedBox(
-                    height: 20.h,
-                  ),
-                  const Infopago(),
-                  SizedBox(
-                    height: 20.h,
-                  ),
-                   InfoClient(ClientId: clientId,),
-                  SizedBox(
-                    height: 100.h,
-                  ),
-                  Container(
-                      height: 100.h,
-                      width: 660.w,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20.r),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(35, 122, 252, 1),
-                            Color.fromRGBO(59, 151, 244, 1),
-                          ],
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20.h),
+                      Infopago(plan: plan, precio: precio),
+                      SizedBox(height: 20.h),
+                      InfoClient(nombre: nombre),
+                      SizedBox(height: 100.h),
+                      Container(
+                        height: 100.h,
+                        width: 660.w,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.r),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color.fromRGBO(35, 122, 252, 1),
+                              Color.fromRGBO(59, 151, 244, 1),
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Pagar',
+                                style: TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 40.sp,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(width: 20.w),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white60,
+                              )
+                            ],
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Pagar',
-                              style: TextStyle(
-                                  color: Colors.white60,
-                                  fontSize: 40.sp,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(
-                              width: 20.w,
-                            ),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white60,
-                            )
-                          ],
-                        ),
-                      ))
-                ],
-              ),
-            ),
-          ],
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -92,9 +108,10 @@ class PagoScreen extends StatelessWidget {
 }
 
 class InfoClient extends StatelessWidget {
-  final String ClientId;
+  final String nombre;
   const InfoClient({
-    super.key, required this.ClientId,
+    super.key,
+    required this.nombre,
   });
 
   @override
@@ -105,9 +122,7 @@ class InfoClient extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
         color: const Color.fromARGB(255, 37, 37, 37),
-        shape: BoxShape.rectangle,
-        boxShadow: //boxsahdow
-            const [
+        boxShadow: const [
           BoxShadow(
             color: Color.fromARGB(255, 0, 0, 0),
             blurRadius: 10,
@@ -128,23 +143,20 @@ class InfoClient extends StatelessWidget {
                 size: 50.r,
               ),
             ),
-            SizedBox(
-              width: 25.w,
-            ),
+            SizedBox(width: 25.w),
             Text(
-              'Paula López + $ClientId',
+              nombre,
               style: TextStyle(
                   color: Colors.white60,
                   fontSize: 35.sp,
                   fontWeight: FontWeight.bold),
             ),
-            SizedBox(
-              width: 200.w,
-            ),
+            const Spacer(),
             Icon(
               Icons.delete,
               color: Colors.red[400],
-            )
+            ),
+            SizedBox(width: 20.w),
           ],
         ),
       ),
@@ -153,8 +165,12 @@ class InfoClient extends StatelessWidget {
 }
 
 class Infopago extends StatelessWidget {
+  final String plan;
+  final String precio;
   const Infopago({
     super.key,
+    required this.plan,
+    required this.precio,
   });
 
   @override
@@ -175,13 +191,13 @@ class Infopago extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    Text('Plan: Básico',
+                    Text('Plan: $plan',
                         style: TextStyle(
                             color: Colors.white60,
                             fontSize: 32.sp,
                             fontWeight: FontWeight.bold)),
                     Text(
-                      'Q100.00',
+                      'Q$precio.00',
                       style: TextStyle(
                           color: Colors.white60,
                           fontSize: 55.sp,
@@ -274,7 +290,7 @@ class Infopago extends StatelessWidget {
                       width: 10.w,
                     ),
                     Text(
-                      'Q100.00',
+                      'Q$precio',
                       style: TextStyle(
                           color: Colors.green,
                           fontSize: 30.sp,
@@ -309,9 +325,7 @@ class Retun extends StatelessWidget {
             color: Colors.white60,
           ),
         ),
-        SizedBox(
-          width: 200.w,
-        ),
+        SizedBox(width: 200.w),
         Text(
           'Pagos',
           style: TextStyle(

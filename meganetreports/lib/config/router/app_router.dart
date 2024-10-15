@@ -55,7 +55,7 @@ final GoRouter appRouter = GoRouter(
                   path: 'NPago',
                   name: 'NPago',
                   builder: (BuildContext context, GoRouterState state) {
-                    final clientId = state.extra;
+                    final String clientId = state.extra as String;
                     return PagoScreen(clientId: clientId,); 
                   },
                 ),
