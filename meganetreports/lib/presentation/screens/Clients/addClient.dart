@@ -32,6 +32,7 @@ class _AddClientsState extends State<AddClients> {
   // Controladores de los campos
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController firstPay = TextEditingController();
 
   // Variable para almacenar el plan seleccionado
   Plan? selectedPlan;
@@ -48,45 +49,56 @@ class _AddClientsState extends State<AddClients> {
   }
 
   // Función para guardar cliente en Firestore
-  Future<void> _saveClient() async {
-    if (nameController.text.isEmpty || phoneController.text.isEmpty || selectedPlan == null) {
-      // Muestra un mensaje de error si alguno de los campos está vacío
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, completa todos los campos.')),
-      );
-      return;
-    }
+Future<void> _saveClient() async {
+  if (nameController.text.isEmpty || phoneController.text.isEmpty || selectedPlan == null || firstPay.text.isEmpty) {
+    // Muestra un mensaje de error si alguno de los campos está vacío
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Por favor, completa todos los campos.')),
+    );
+    return;
+  }
 
-    // Datos del cliente a guardar
-    Map<String, dynamic> clientData = {
-      'nombre': nameController.text,
-      'telefono': phoneController.text,
-      'plan_nombre': selectedPlan!.name,
-      'plan_precio': selectedPlan!.price,
+  // Datos del cliente a guardar
+  Map<String, dynamic> clientData = {
+    'nombre': nameController.text,
+    'telefono': phoneController.text,
+    'plan_nombre': selectedPlan!.name,
+    'plan_precio': selectedPlan!.price,
+  };
+
+  try {
+    // Guarda el cliente en la colección 'clientes' de Firestore y obtiene el ID del documento recién creado
+    DocumentReference clientRef = await FirebaseFirestore.instance.collection('clientes').add(clientData);
+
+    // Ahora guarda la información del primer pago en la subcolección 'Pagos'
+    Map<String, dynamic> pagoData = {
+      'mespago': firstPay.text, // Guardar el mes de pago desde el controller
+      'fecha_pago': Timestamp.now(), // Timestamp con el horario actual
+      'total': selectedPlan!.price, // Precio del plan
     };
 
-    try {
-      // Guarda el cliente en la colección 'clientes' de Firestore
-      await FirebaseFirestore.instance.collection('clientes').add(clientData);
+    // Agrega el pago a la subcolección 'Pagos' del cliente recién creado
+    await clientRef.collection('Pagos').add(pagoData);
 
-      // Muestra un mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cliente guardado exitosamente.')),
-      );
+    // Muestra un mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cliente y primer pago guardados exitosamente.')),
+    );
 
-      // Limpia los campos después de guardar
-      nameController.clear();
-      phoneController.clear();
-      setState(() {
-        selectedPlan = null;
-      });
-    } catch (e) {
-      // En caso de error, muestra un mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar cliente: $e')),
-      );
-    }
+    // Limpia los campos después de guardar
+    nameController.clear();
+    phoneController.clear();
+    firstPay.clear(); // Limpia también el campo del primer pago
+    setState(() {
+      selectedPlan = null;
+    });
+  } catch (e) {
+    // En caso de error, muestra un mensaje de error
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al guardar cliente o pago: $e')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +245,30 @@ class _AddClientsState extends State<AddClients> {
                     ),
                     style: const TextStyle(color: Colors.white),
                   ),
+                  const SizedBox(height: 16),
+
+                  // Campo para el teléfono
+                  const Text(
+                    'Primer mes Pagado',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: firstPay,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                      hintText: 'Septiembre 2024',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color.fromRGBO(13, 71, 161, 1)), // Borde azul cuando tiene foco
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+
                   SizedBox(height: 60.h),
 
                   // Botón para guardar
