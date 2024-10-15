@@ -3,16 +3,75 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+Future<void> savePayment({
+  required String clientId, // ID del cliente
+  required DateTime fechaPago, // Fecha y hora del pago
+  required String mesPago, // Mes del pago (ejemplo: "Septiembre 2024")
+  String? descuento, // Descuento opcional (ejemplo: "50")
+  String? descDescuento, // Descripción del descuento opcional
+  required String total, // Total del pago
+}) async {
+  try {
+    // Referencia a la subcolección 'Pagos' del cliente
+    CollectionReference pagosRef = FirebaseFirestore.instance
+        .collection('clientes')
+        .doc(clientId)
+        .collection('Pagos');
+
+    // Estructura de los datos del pago
+    Map<String, dynamic> pagoData = {
+      'fecha_pago': fechaPago,
+      'mespago': mesPago,
+      'total': total,
+    };
+
+    // Si hay un descuento, lo añadimos
+    if (descuento != null && descuento.isNotEmpty) {
+      pagoData['descuento'] = descuento;
+      pagoData['descdescuento'] = descDescuento ?? '';
+    }
+
+    // Guardar el pago en Firestore
+    await pagosRef.add(pagoData);
+    print('Pago guardado correctamente');
+  } catch (e) {
+    print('Error al guardar el pago: $e');
+  }
+}
+
 class PagoScreen extends StatelessWidget {
   final String clientId;
   const PagoScreen({super.key, required this.clientId});
 
   Future<Map<String, dynamic>?> _getClientData() async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('clientes')
-        .doc(clientId)
-        .get();
-    return doc.data() as Map<String, dynamic>?;
+    try {
+      // Obtener los datos del cliente
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('clientes')
+          .doc(clientId)
+          .get();
+
+      // Obtener el último pago del cliente
+      QuerySnapshot pagosSnapshot = await FirebaseFirestore.instance
+          .collection('clientes')
+          .doc(clientId)
+          .collection('Pagos')
+          .orderBy('fecha_pago', descending: true)
+          .limit(1)
+          .get();
+
+      Map<String, dynamic>? clientData = doc.data() as Map<String, dynamic>?;
+
+      if (clientData != null && pagosSnapshot.docs.isNotEmpty) {
+        // Agregar el último pago a los datos del cliente
+        clientData['ultimo_pago'] = pagosSnapshot.docs.first.data();
+      }
+
+      return clientData;
+    } catch (e) {
+      print('Error al obtener datos del cliente: $e');
+      return null;
+    }
   }
 
   @override
@@ -40,7 +99,7 @@ class PagoScreen extends StatelessWidget {
             final nombre = clientData['nombre'] ?? 'Cliente Desconocido';
             final plan = clientData['plan_nombre'] ?? 'Plan Desconocido';
             final precio = clientData['plan_precio'] ?? '0.00';
-
+            final ultimoPago = clientData['ultimo_pago'] ?? {};
             return Column(
               children: [
                 const Retun(),
@@ -57,41 +116,52 @@ class PagoScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       SizedBox(height: 20.h),
-                      Infopago(plan: plan, precio: precio),
+                      Infopago(plan: plan, precio: precio, mes: ultimoPago),
                       SizedBox(height: 20.h),
                       InfoClient(nombre: nombre),
                       SizedBox(height: 100.h),
-                      Container(
-                        height: 100.h,
-                        width: 660.w,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20.r),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color.fromRGBO(35, 122, 252, 1),
-                              Color.fromRGBO(59, 151, 244, 1),
-                            ],
+                      GestureDetector(
+                        onTap: () {
+                          savePayment(
+                            clientId: clientId,
+                            fechaPago: DateTime.now(),
+                            mesPago: 'Marzo 2024',
+                            total: precio,
+                          );
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          height: 100.h,
+                          width: 660.w,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.r),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color.fromRGBO(35, 122, 252, 1),
+                                Color.fromRGBO(59, 151, 244, 1),
+                              ],
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Pagar',
-                                style: TextStyle(
-                                    color: Colors.white60,
-                                    fontSize: 40.sp,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(width: 20.w),
-                              const Icon(
-                                Icons.arrow_forward_ios,
-                                color: Colors.white60,
-                              )
-                            ],
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Pagar',
+                                  style: TextStyle(
+                                      color: Colors.white60,
+                                      fontSize: 40.sp,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(width: 20.w),
+                                const Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Colors.white60,
+                                )
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -167,14 +237,17 @@ class InfoClient extends StatelessWidget {
 class Infopago extends StatelessWidget {
   final String plan;
   final String precio;
+  final  Map<String, dynamic> mes;
   const Infopago({
     super.key,
     required this.plan,
     required this.precio,
+    required this.mes,
   });
 
   @override
   Widget build(BuildContext context) {
+    final mesPago = mes['mespago'] ?? 'N/A';
     return Container(
       height: 330.h,
       width: 660.w,
@@ -216,10 +289,10 @@ class Infopago extends StatelessWidget {
                       size: 50.r,
                     ),
                     Text(
-                      'Marzo 2024',
+                      '$mesPago',
                       style: TextStyle(
                           color: Colors.white60,
-                          fontSize: 32.sp,
+                          fontSize: 25.sp,
                           fontWeight: FontWeight.bold),
                     ),
                   ],
