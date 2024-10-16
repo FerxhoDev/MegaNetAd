@@ -4,6 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosDelDia() {
+  DateTime startOfDay =
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
+  return FirebaseFirestore.instance
+      .collectionGroup(
+          'Pagos') // Obtenemos la subcolección 'Pagos' de todos los clientes
+      .where('fecha_pago',
+          isGreaterThanOrEqualTo:
+              startOfDay) // Filtramos por pagos del día actual
+      .snapshots();
+}
+
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
@@ -36,68 +49,71 @@ class _DashboardState extends State<Dashboard> {
         });
       } else {
         setState(() {
-          userName = "Unknown User"; // Valor por defecto si el documento no existe
+          userName =
+              "Unknown User"; // Valor por defecto si el documento no existe
         });
       }
     }
   }
-Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
-  return FirebaseFirestore.instance
-      .collection('clientes')
-      .snapshots();
-}
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
+    return FirebaseFirestore.instance.collection('clientes').snapshots();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255,37, 37, 37,),
+      backgroundColor: const Color.fromARGB(
+        255,
+        37,
+        37,
+        37,
+      ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(left:40.w, right: 20.w, top: 10.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bienvenido',
-                          style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28.sp,
-                          fontWeight: FontWeight.w300,
-                        ),
+          child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(left: 40.w, right: 20.w, top: 10.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bienvenido',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.w300,
                       ),
-                      Text(
-                        '$userName',
-                          style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 33.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  IconButton(
-                    onPressed: () {
-                      // Cerrar sesión
-                      FirebaseAuth.instance.signOut();
-                      context.go('/');
-                    },
-                    icon: const Icon(
-                      Icons.logout,
-                      color: Colors.white,
                     ),
+                    Text(
+                      '$userName',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 33.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  onPressed: () {
+                    // Cerrar sesión
+                    FirebaseAuth.instance.signOut();
+                    context.go('/');
+                  },
+                  icon: const Icon(
+                    Icons.logout,
+                    color: Colors.white,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            SizedBox(height: 20.h),
-            Container(
+          ),
+          SizedBox(height: 20.h),
+          Container(
               width: double.infinity,
               height: 1111.h,
               decoration: BoxDecoration(
@@ -111,7 +127,7 @@ Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(12.0),
-                    child: Row(                    
+                    child: Row(
                       children: [
                         SizedBox(width: 5.w),
                         const TotalDia(),
@@ -121,11 +137,12 @@ Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
                     ),
                   ),
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    child: VerClients()                    
-                  ),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      child: VerClients()),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     child: Container(
                       width: double.infinity,
                       height: 200.h,
@@ -142,7 +159,7 @@ Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
                             height: 150.h,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(18),
-                            color: Color.fromARGB(255, 57, 57, 57),
+                              color: Color.fromARGB(255, 57, 57, 57),
                             ),
                           ),
                           GestureDetector(
@@ -164,105 +181,141 @@ Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
                                   ],
                                 ),
                               ),
-                              child: 
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.my_library_add_rounded, color: Colors.white60, size: 45.sp,),
-                                    Text('Nuevo Pago', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
-                                  ],
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.my_library_add_rounded,
+                                    color: Colors.white60,
+                                    size: 45.sp,
+                                  ),
+                                  Text(
+                                    'Nuevo Pago',
+                                    style: TextStyle(
+                                        fontSize: 28.sp,
+                                        color: Colors.white60,
+                                        fontWeight: FontWeight.bold),
+                                  )
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),           
-                  ),  
-                  SizedBox(height: 70.h, child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 22.w),
-                    child: const Row(
-                      children: [
-                        Text('Pagos del día', style: TextStyle(color: Colors.white),),
-                        Spacer(),
-                        Text('Ver todos...', style: TextStyle(color: Colors.white60),),
-                      ],
                     ),
-                  ),),
+                  ),
+                  SizedBox(
+                    height: 70.h,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 22.w),
+                      child: const Row(
+                        children: [
+                          Text(
+                            'Pagos del día',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Spacer(),
+                          Text(
+                            'Ver todos...',
+                            style: TextStyle(color: Colors.white60),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
-                      width: double.infinity,
-                      height: 400.h,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20.r),
-                        color: const Color.fromARGB(255, 37, 37, 37),
-                      ),
-                      child: StreamBuilder<QuerySnapshot>(
-                    stream: _getPagosConClientesStream(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return const Center(child: Text('Error al cargar los pagos'));
-                      } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Center(child: Text('No se encontraron pagos'));
-                      }
+                        width: double.infinity,
+                        height: 400.h,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.r),
+                          color: const Color.fromARGB(255, 37, 37, 37),
+                        ),
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: _getPagosConClientesStream(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return const Center(
+                                  child: Text('Error al cargar los pagos'));
+                            } else if (!snapshot.hasData ||
+                                snapshot.data!.docs.isEmpty) {
+                              return const Center(
+                                  child: Text('No se encontraron pagos'));
+                            }
 
-                      final clientDocs = snapshot.data!.docs;
+                            final clientDocs = snapshot.data!.docs;
 
-                      List<Widget> pagosList = [];
+                            List<Widget> pagosList = [];
 
-                      for (var clientDoc in clientDocs) {
-                        final clientData = clientDoc.data() as Map<String, dynamic>;
-                        final clientName = clientData['nombre'] ?? 'Cliente Desconocido';
+                            for (var clientDoc in clientDocs) {
+                              final clientData =
+                                  clientDoc.data() as Map<String, dynamic>;
+                              final clientName =
+                                  clientData['nombre'] ?? 'Cliente Desconocido';
 
-                        final pagosRef = clientDoc.reference.collection('Pagos').where(
-                          'fecha_pago',
-                          isGreaterThanOrEqualTo: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-                        );
+                              final pagosRef =
+                                  clientDoc.reference.collection('Pagos').where(
+                                        'fecha_pago',
+                                        isGreaterThanOrEqualTo: DateTime(
+                                            DateTime.now().year,
+                                            DateTime.now().month,
+                                            DateTime.now().day),
+                                      );
 
-                        pagosList.add(
-                          StreamBuilder<QuerySnapshot>(
-                            stream: pagosRef.snapshots(),
-                            builder: (context, pagosSnapshot) {
-                              if (!pagosSnapshot.hasData || pagosSnapshot.data!.docs.isEmpty) {
-                                return Container(); // No mostrar si no hay pagos
-                              }
+                              pagosList.add(
+                                StreamBuilder<QuerySnapshot>(
+                                  stream: pagosRef.snapshots(),
+                                  builder: (context, pagosSnapshot) {
+                                    if (!pagosSnapshot.hasData ||
+                                        pagosSnapshot.data!.docs.isEmpty) {
+                                      return Container(); // No mostrar si no hay pagos
+                                    }
 
-                              final pagosDocs = pagosSnapshot.data!.docs;
+                                    final pagosDocs = pagosSnapshot.data!.docs;
 
-                              return Column(
-                                children: pagosDocs.map((pagoDoc) {
-                                  final pagoData = pagoDoc.data() as Map<String, dynamic>;
-                                  final mesPago = pagoData['mespago'] ?? 'Mes no registrado';
-                                  final total = pagoData['total'] ?? '0.00';
+                                    return Column(
+                                      children: pagosDocs.map((pagoDoc) {
+                                        final pagoData = pagoDoc.data()
+                                            as Map<String, dynamic>;
+                                        final mesPago = pagoData['mespago'] ??
+                                            'Mes no registrado';
+                                        final total =
+                                            pagoData['total'] ?? '0.00';
 
-                                  return ListTile(
-                                    title: Text(clientName, style: const TextStyle(color: Colors.white70)),
-                                    subtitle: Text(mesPago, style: const TextStyle(color: Colors.white54)),
-                                    leading: const Icon(Icons.person),
-                                    trailing: Text('+ Q$total', style: TextStyle(color: Colors.green, fontSize: 30.sp)),
-                                  );
-                                }).toList(),
+                                        return ListTile(
+                                          title: Text(clientName,
+                                              style: const TextStyle(
+                                                  color: Colors.white70)),
+                                          subtitle: Text(mesPago,
+                                              style: const TextStyle(
+                                                  color: Colors.white54)),
+                                          leading: const Icon(Icons.person),
+                                          trailing: Text('+ Q$total',
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 30.sp)),
+                                        );
+                                      }).toList(),
+                                    );
+                                  },
+                                ),
                               );
-                            },
-                          ),
-                        );
-                      }
+                            }
 
-                      return ListView(children: pagosList);
-                    },
-                  )
-                    ),
-                  ),                
+                            return ListView(children: pagosList);
+                          },
+                        )),
+                  ),
                 ],
-              )
-            ),
-            
-          ],
-        )
-      ),
+              )),
+        ],
+      )),
     );
   }
 }
@@ -290,8 +343,18 @@ class Plans extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.content_paste, color: Colors.white60, size: 45.sp,),
-            Text('Planes', style: TextStyle(fontSize: 28.sp, color: Colors.white60, fontWeight: FontWeight.bold),)
+            Icon(
+              Icons.content_paste,
+              color: Colors.white60,
+              size: 45.sp,
+            ),
+            Text(
+              'Planes',
+              style: TextStyle(
+                  fontSize: 28.sp,
+                  color: Colors.white60,
+                  fontWeight: FontWeight.bold),
+            )
           ],
         ),
       ),
@@ -325,7 +388,11 @@ class VerClients extends StatelessWidget {
               size: 60.sp,
             ),
             SizedBox(width: 20.w),
-            const Text('Cllientes', style: TextStyle(color: Colors.white60, fontWeight: FontWeight.bold),),
+            const Text(
+              'Cllientes',
+              style:
+                  TextStyle(color: Colors.white60, fontWeight: FontWeight.bold),
+            ),
             const Spacer(),
             Icon(
               Icons.arrow_forward_ios,
@@ -354,18 +421,18 @@ class TotalMes extends StatelessWidget {
         color: const Color.fromARGB(255, 37, 37, 37),
         borderRadius: BorderRadius.circular(20.r),
       ),
-      child:  Column(
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                 const Icon(
+                const Icon(
                   Icons.calendar_today,
                   color: Colors.white,
                 ),
-                 const SizedBox(width: 10),
-                 Text(
+                const SizedBox(width: 10),
+                Text(
                   'Total del mes',
                   style: TextStyle(
                     color: Colors.white,
@@ -408,6 +475,33 @@ class TotalDia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _getPagosDelDia(), // Usamos el nuevo stream de pagos del día
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text('Error al cargar los pagos'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _buildTotalContainer(0.00); // Si no hay datos, el total es 0
+        }
+
+        // Calculamos el total sumando los campos 'total' de cada pago
+        double totalDia = 0;
+        for (var doc in snapshot.data!.docs) {
+          // Convertimos el campo 'total' a double (puede estar almacenado como string en Firestore)
+          totalDia += double.tryParse(doc['total']) ?? 00;
+        }
+
+        return _buildTotalContainer(totalDia); // Mostramos el total calculado
+      },
+    );
+  }
+
+  // Método para construir el widget con el total
+  Widget _buildTotalContainer(double totalDia) {
     return Container(
       width: 325.w,
       height: 225.h,
@@ -420,21 +514,20 @@ class TotalDia extends StatelessWidget {
             Color.fromRGBO(59, 151, 244, 1),
           ],
         ),
-       // color: const Color.fromRGBO(13, 71, 161, 1),
         borderRadius: BorderRadius.circular(20.r),
       ),
-      child:  Column(
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                 const Icon(
+                const Icon(
                   Icons.calendar_today,
                   color: Colors.white,
                 ),
-                 const SizedBox(width: 10),
-                 Text(
+                const SizedBox(width: 10),
+                Text(
                   'Total del día',
                   style: TextStyle(
                     color: Colors.white,
@@ -455,7 +548,7 @@ class TotalDia extends StatelessWidget {
               ),
               SizedBox(width: 15.w),
               Text(
-                'Q1,200',
+                'Q${totalDia.toStringAsFixed(2)}', // Mostramos el total calculado
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 55.sp,
