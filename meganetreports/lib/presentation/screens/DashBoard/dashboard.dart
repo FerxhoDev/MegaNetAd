@@ -42,6 +42,83 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
+Future<List<Map<String, dynamic>>> _getPagosDelDiaConClientes() async {
+  DateTime today = DateTime.now();
+  DateTime startOfDay = DateTime(today.year, today.month, today.day);
+  DateTime endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
+
+  try {
+    // Consulta para obtener los pagos de hoy
+    QuerySnapshot pagosSnapshot = await FirebaseFirestore.instance
+        .collectionGroup('Pagos')
+        .where('fecha_pago', isGreaterThanOrEqualTo: startOfDay)
+        .where('fecha_pago', isLessThanOrEqualTo: endOfDay)
+        .get();
+
+    List<Map<String, dynamic>> pagosConClientes = [];
+
+    for (var pagoDoc in pagosSnapshot.docs) {
+      var pagoData = pagoDoc.data() as Map<String, dynamic>;
+
+      // Verificar que tengamos una referencia al cliente
+      if (pagoDoc.reference.parent.parent != null) {
+        String clientId = pagoDoc.reference.parent.parent!.id;
+
+        // Obtener los datos del cliente
+        DocumentSnapshot clienteDoc = await FirebaseFirestore.instance
+            .collection('clientes')
+            .doc(clientId)
+            .get();
+
+        if (clienteDoc.exists) {
+          var clienteData = clienteDoc.data() as Map<String, dynamic>;
+
+          // Combinar la información del pago y del cliente
+          pagosConClientes.add({
+            'nombre': clienteData['nombre'] ?? 'Nombre no disponible',
+            'plan_nombre': clienteData['plan_nombre'] ?? 'Plan no disponible',
+            'plan_precio': clienteData['plan_precio'] ?? 'Precio no disponible',
+            'fecha_pago': pagoData['fecha_pago'],
+            'mespago': pagoData['mespago'],
+            'total': pagoData['total'],
+          });
+        }
+      } else {
+        print('Error: No se encontró la referencia al cliente.');
+      }
+    }
+
+    return pagosConClientes;
+  } catch (e) {
+    print('Error al obtener pagos con clientes: $e');
+    return [];
+  }
+}
+
+
+
+Stream<QuerySnapshot> _getAllPagosDelDia() {
+  return FirebaseFirestore.instance
+      .collectionGroup('Pagos') // O la colección correcta de los pagos
+      .snapshots();
+}
+
+
+  //Traer pagos del día 
+  Stream<QuerySnapshot> _getPagosDelDia() {
+  // Obtén la fecha de hoy sin la parte de tiempo
+  DateTime hoy = DateTime.now();
+  DateTime inicioDelDia = DateTime(hoy.year, hoy.month, hoy.day);
+  DateTime finDelDia = inicioDelDia.add(Duration(days: 1));
+
+  return FirebaseFirestore.instance
+      .collection('Pagos') // O la colección de pagos
+      .where('fecha_pago', isGreaterThanOrEqualTo: inicioDelDia)
+      .where('fecha_pago', isLessThan: finDelDia)
+      .snapshots();
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,7 +207,7 @@ class _DashboardState extends State<Dashboard> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          const EditarPago(),
+                          const Plans(),
                           Container(
                             width: 200.w,
                             height: 150.h,
@@ -177,64 +254,56 @@ class _DashboardState extends State<Dashboard> {
                     padding: EdgeInsets.symmetric(horizontal: 22.w),
                     child: const Row(
                       children: [
-                        Text('Últimos Pagos', style: TextStyle(color: Colors.white),),
+                        Text('Pagos del día', style: TextStyle(color: Colors.white),),
                         Spacer(),
                         Text('Ver todos...', style: TextStyle(color: Colors.white60),),
                       ],
                     ),
                   ),),
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: double.infinity,
-                      height: 400.h,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20.r),
-                        color:  const Color.fromARGB(255, 37, 37, 37),
-                      ),
-                      child: ListView(
-                        children:[
-                          ListTile(
-                            tileColor: Color.fromARGB(255, 231, 94, 94),
-                            title: const Text('Paula López', style: TextStyle(color: Colors.white70),),
-                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
-                            leading: const Icon(Icons.person),
-                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
-                            style: ListTileStyle.drawer,
-                          ),
-                          //const Divider(),
-                          ListTile(
-                            title: const Text('Conni Paz', style: TextStyle(color: Colors.white70),),
-                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
-                            leading: const Icon(Icons.person),
-                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
-                          ),
-                          //const Divider(),
-                          ListTile(
-                            title: const Text('Rosa Díaz', style: TextStyle(color: Colors.white70),),
-                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
-                            leading: const Icon(Icons.person),
-                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
-                          ),
-                          //const Divider(),
-                          ListTile(
-                            title: const Text('Erick Méndez', style: TextStyle(color: Colors.white70),),
-                            subtitle: const Text('Plus', style: TextStyle(color: Colors.white54),),
-                            leading: const Icon(Icons.person),
-                            trailing: Text('+ Q300', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
-                          ),
-                          //const Divider(),
-                          ListTile(
-                            title: const Text('Jaime López', style: TextStyle(color: Colors.white70),),
-                            subtitle: const Text('Básico', style: TextStyle(color: Colors.white54),),
-                            leading: const Icon(Icons.person),
-                            trailing: Text('+ Q200', style: TextStyle(color: Colors.green, fontSize: 30.sp),),
-                          ),
-                          //const Divider(),
-                        ],
-                      ),
-                    ),
-                  )                
+  padding: const EdgeInsets.all(8.0),
+  child: Container(
+    width: double.infinity,
+    height: 400.h,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20.r),
+      color: const Color.fromARGB(255, 37, 37, 37),
+    ),
+    child: FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getPagosDelDiaConClientes(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text('Error al cargar los pagos'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No hay pagos registrados hoy'));
+        }
+
+        // Lista de pagos
+        List<Map<String, dynamic>> pagos = snapshot.data!;
+
+        return ListView.builder(
+          itemCount: pagos.length,
+          itemBuilder: (context, index) {
+            var pago = pagos[index];
+
+            return ListTile(
+              title: Text(pago['nombre'], style: TextStyle(color: Colors.white70)),
+              subtitle: Text(pago['plan_nombre'], style: TextStyle(color: Colors.white54)),
+              leading: const Icon(Icons.person, color: Colors.white70),
+              trailing: Text(
+                '+ ${pago['total']}',
+                style: TextStyle(color: Colors.green, fontSize: 30.sp),
+              ),
+              tileColor: const Color.fromARGB(255, 37, 37, 37),
+            );
+          },
+        );
+      },
+    ),
+  ),
+),                
                 ],
               )
             ),
@@ -246,8 +315,8 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-class EditarPago extends StatelessWidget {
-  const EditarPago({
+class Plans extends StatelessWidget {
+  const Plans({
     super.key,
   });
 
