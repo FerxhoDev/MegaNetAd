@@ -41,80 +41,9 @@ class _DashboardState extends State<Dashboard> {
       }
     }
   }
-
-Future<List<Map<String, dynamic>>> _getPagosDelDiaConClientes() async {
-  DateTime today = DateTime.now();
-  DateTime startOfDay = DateTime(today.year, today.month, today.day);
-  DateTime endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
-
-  try {
-    // Consulta para obtener los pagos de hoy
-    QuerySnapshot pagosSnapshot = await FirebaseFirestore.instance
-        .collectionGroup('Pagos')
-        .where('fecha_pago', isGreaterThanOrEqualTo: startOfDay)
-        .where('fecha_pago', isLessThanOrEqualTo: endOfDay)
-        .get();
-
-    List<Map<String, dynamic>> pagosConClientes = [];
-
-    for (var pagoDoc in pagosSnapshot.docs) {
-      var pagoData = pagoDoc.data() as Map<String, dynamic>;
-
-      // Verificar que tengamos una referencia al cliente
-      if (pagoDoc.reference.parent.parent != null) {
-        String clientId = pagoDoc.reference.parent.parent!.id;
-
-        // Obtener los datos del cliente
-        DocumentSnapshot clienteDoc = await FirebaseFirestore.instance
-            .collection('clientes')
-            .doc(clientId)
-            .get();
-
-        if (clienteDoc.exists) {
-          var clienteData = clienteDoc.data() as Map<String, dynamic>;
-
-          // Combinar la información del pago y del cliente
-          pagosConClientes.add({
-            'nombre': clienteData['nombre'] ?? 'Nombre no disponible',
-            'plan_nombre': clienteData['plan_nombre'] ?? 'Plan no disponible',
-            'plan_precio': clienteData['plan_precio'] ?? 'Precio no disponible',
-            'fecha_pago': pagoData['fecha_pago'],
-            'mespago': pagoData['mespago'],
-            'total': pagoData['total'],
-          });
-        }
-      } else {
-        print('Error: No se encontró la referencia al cliente.');
-      }
-    }
-
-    return pagosConClientes;
-  } catch (e) {
-    print('Error al obtener pagos con clientes: $e');
-    return [];
-  }
-}
-
-
-
-Stream<QuerySnapshot> _getAllPagosDelDia() {
+Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
   return FirebaseFirestore.instance
-      .collectionGroup('Pagos') // O la colección correcta de los pagos
-      .snapshots();
-}
-
-
-  //Traer pagos del día 
-  Stream<QuerySnapshot> _getPagosDelDia() {
-  // Obtén la fecha de hoy sin la parte de tiempo
-  DateTime hoy = DateTime.now();
-  DateTime inicioDelDia = DateTime(hoy.year, hoy.month, hoy.day);
-  DateTime finDelDia = inicioDelDia.add(Duration(days: 1));
-
-  return FirebaseFirestore.instance
-      .collection('Pagos') // O la colección de pagos
-      .where('fecha_pago', isGreaterThanOrEqualTo: inicioDelDia)
-      .where('fecha_pago', isLessThan: finDelDia)
+      .collection('clientes')
       .snapshots();
 }
 
@@ -261,49 +190,72 @@ Stream<QuerySnapshot> _getAllPagosDelDia() {
                     ),
                   ),),
                   Padding(
-  padding: const EdgeInsets.all(8.0),
-  child: Container(
-    width: double.infinity,
-    height: 400.h,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20.r),
-      color: const Color.fromARGB(255, 37, 37, 37),
-    ),
-    child: FutureBuilder<List<Map<String, dynamic>>>(
-      future: _getPagosDelDiaConClientes(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return const Center(child: Text('Error al cargar los pagos'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No hay pagos registrados hoy'));
-        }
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: double.infinity,
+                      height: 400.h,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.r),
+                        color: const Color.fromARGB(255, 37, 37, 37),
+                      ),
+                      child: StreamBuilder<QuerySnapshot>(
+                    stream: _getPagosConClientesStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return const Center(child: Text('Error al cargar los pagos'));
+                      } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(child: Text('No se encontraron pagos'));
+                      }
 
-        // Lista de pagos
-        List<Map<String, dynamic>> pagos = snapshot.data!;
+                      final clientDocs = snapshot.data!.docs;
 
-        return ListView.builder(
-          itemCount: pagos.length,
-          itemBuilder: (context, index) {
-            var pago = pagos[index];
+                      List<Widget> pagosList = [];
 
-            return ListTile(
-              title: Text(pago['nombre'], style: TextStyle(color: Colors.white70)),
-              subtitle: Text(pago['plan_nombre'], style: TextStyle(color: Colors.white54)),
-              leading: const Icon(Icons.person, color: Colors.white70),
-              trailing: Text(
-                '+ ${pago['total']}',
-                style: TextStyle(color: Colors.green, fontSize: 30.sp),
-              ),
-              tileColor: const Color.fromARGB(255, 37, 37, 37),
-            );
-          },
-        );
-      },
-    ),
-  ),
-),                
+                      for (var clientDoc in clientDocs) {
+                        final clientData = clientDoc.data() as Map<String, dynamic>;
+                        final clientName = clientData['nombre'] ?? 'Cliente Desconocido';
+
+                        final pagosRef = clientDoc.reference.collection('Pagos').where(
+                          'fecha_pago',
+                          isGreaterThanOrEqualTo: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+                        );
+
+                        pagosList.add(
+                          StreamBuilder<QuerySnapshot>(
+                            stream: pagosRef.snapshots(),
+                            builder: (context, pagosSnapshot) {
+                              if (!pagosSnapshot.hasData || pagosSnapshot.data!.docs.isEmpty) {
+                                return Container(); // No mostrar si no hay pagos
+                              }
+
+                              final pagosDocs = pagosSnapshot.data!.docs;
+
+                              return Column(
+                                children: pagosDocs.map((pagoDoc) {
+                                  final pagoData = pagoDoc.data() as Map<String, dynamic>;
+                                  final mesPago = pagoData['mespago'] ?? 'Mes no registrado';
+                                  final total = pagoData['total'] ?? '0.00';
+
+                                  return ListTile(
+                                    title: Text(clientName, style: const TextStyle(color: Colors.white70)),
+                                    subtitle: Text(mesPago, style: const TextStyle(color: Colors.white54)),
+                                    leading: const Icon(Icons.person),
+                                    trailing: Text('+ Q$total', style: TextStyle(color: Colors.green, fontSize: 30.sp)),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        );
+                      }
+
+                      return ListView(children: pagosList);
+                    },
+                  )
+                    ),
+                  ),                
                 ],
               )
             ),
