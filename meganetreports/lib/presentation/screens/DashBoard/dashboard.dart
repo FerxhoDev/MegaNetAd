@@ -17,6 +17,19 @@ Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosDelDia() {
       .snapshots();
 }
 
+Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosDelMesStream() {
+  DateTime now = DateTime.now();
+  DateTime firstDayOfMonth = DateTime(now.year, now.month, 1);
+  DateTime firstDayOfNextMonth = DateTime(now.year, now.month + 1, 1);
+
+  return FirebaseFirestore.instance
+      .collectionGroup('Pagos')
+      .where('fecha_pago', isGreaterThanOrEqualTo: firstDayOfMonth)
+      .where('fecha_pago', isLessThan: firstDayOfNextMonth)
+      .snapshots();
+}
+
+
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
@@ -408,65 +421,88 @@ class VerClients extends StatelessWidget {
 }
 
 class TotalMes extends StatelessWidget {
-  const TotalMes({
-    super.key,
-  });
+  const TotalMes({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 325.w,
-      height: 225.h,
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 37, 37, 37),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Total del mes',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _getPagosDelMesStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error al cargar los pagos del mes'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('No hay pagos este mes'));
+        }
+
+        // Calcular el total del mes
+        double totalMes = 0;
+        for (var doc in snapshot.data!.docs) {
+          double total = double.tryParse(doc['total']) ?? 0;
+          totalMes += total;
+        }
+
+        return Container(
+          width: 325.w,
+          height: 225.h,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 37, 37, 37),
+            borderRadius: BorderRadius.circular(20.r),
           ),
-          const SizedBox(height: 10),
-          Row(
+          child: Column(
             children: [
-              Icon(
-                Icons.insights,
-                color: Colors.white,
-                size: 60.sp,
-              ),
-              SizedBox(width: 15.w),
-              Text(
-                'Q10,200',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 48.sp,
-                  fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Total del mes',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    Icons.insights,
+                    color: Colors.white,
+                    size: 60.sp,
+                  ),
+                  SizedBox(width: 15.w),
+                  Text(
+                    'Q${totalMes.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
+
 
 class TotalDia extends StatelessWidget {
   const TotalDia({
@@ -551,7 +587,7 @@ class TotalDia extends StatelessWidget {
                 'Q${totalDia.toStringAsFixed(2)}', // Mostramos el total calculado
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 55.sp,
+                  fontSize: 45.sp,
                   fontWeight: FontWeight.bold,
                 ),
               ),
