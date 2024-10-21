@@ -179,7 +179,7 @@ class _ClientsState extends State<Clients> {
             child: _allClientes.isEmpty
                 ? Center(child: CircularProgressIndicator(color: Colors.blue[700]))
                 : _filteredClientes.isEmpty
-                    ? Center(child: Text('No se encontraron clientes', style: TextStyle(color: Colors.white)))
+                    ? const Center(child: Text('No se encontraron clientes', style: TextStyle(color: Colors.white)))
                     : ListView.builder(
                         itemCount: _filteredClientes.length,
                         itemBuilder: (context, index) {
@@ -192,8 +192,13 @@ class _ClientsState extends State<Clients> {
                             title: Text(cliente['nombre'], style: const TextStyle(color: Colors.white)),
                             subtitle: Text('Último pago: ${cliente['ultimoPago']}', style: const TextStyle(color: Colors.white70)),
                             onTap: () {
-                              // Aquí puedes navegar a la pantalla de detalles del cliente si lo deseas
+                               // Navegar a la pantalla de detalle del cliente, pasando el clientId
+                              context.go('/home/clients/DetalleClients/${cliente['id']}');
                             },
+                            trailing: IconButton(
+  icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+  onPressed: () => context.go('/home/clients/DetalleClients/${cliente['id']}'),
+),
                           );
                         },
                       ),

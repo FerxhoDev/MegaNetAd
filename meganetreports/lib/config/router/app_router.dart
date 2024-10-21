@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meganetreports/presentation/screens/Clients/addClient.dart';
 import 'package:meganetreports/presentation/screens/Clients/clients.dart';
+import 'package:meganetreports/presentation/screens/Clients/detalleClient.dart';
 import 'package:meganetreports/presentation/screens/DashBoard/dashboard.dart';
 import 'package:meganetreports/presentation/screens/Pagos/listPagoClients.dart';
 import 'package:meganetreports/presentation/screens/Pagos/pagos.dart';
@@ -68,6 +69,13 @@ final GoRouter appRouter = GoRouter(
                 return const Clients();
               },
               routes: [
+                GoRoute(
+                  path: 'DetalleClients/:clientId',
+                  name: 'DetalleClients',
+                  builder: (BuildContext context, GoRouterState state) {
+                  final String clientId = state.pathParameters['clientId']!;
+                  return Detalleclient(clientId: clientId,);               },
+                ),
                 GoRoute(
                   path: 'AddClients',
                   name: 'AddClients',
