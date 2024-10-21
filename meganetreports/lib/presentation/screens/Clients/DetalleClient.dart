@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:meganetreports/presentation/screens/Clients/EditarClient.dart';
 
 class Detalleclient extends StatefulWidget {
   final String clientId;
@@ -54,20 +55,47 @@ class _DetalleclientState extends State<Detalleclient> {
                   }
 
                   Map<String, dynamic> data = snapshot.data!.data() as Map<String, dynamic>;
-                  return Card(
-                    color: Colors.grey[800],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Nombre: ${data['nombre']}', style: const TextStyle(color: Colors.white, fontSize: 18)),
-                          Text('Plan: ${data['plan_nombre']}', style: const TextStyle(color: Colors.white70)),
-                          Text('Precio: \Q${data['plan_precio']}', style: const TextStyle(color: Colors.white70)),
-                          Text('Teléfono: ${data['telefono']}', style: const TextStyle(color: Colors.white70)),
-                        ],
+                  return Row(
+                    children: [
+                      Card(
+                        color: Colors.grey[800],
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Nombre: ${data['nombre']}', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                              Text('Plan: ${data['plan_nombre']}', style: const TextStyle(color: Colors.white70)),
+                              Text('Precio: \Q${data['plan_precio']}', style: const TextStyle(color: Colors.white70)),
+                              Text('Teléfono: ${data['telefono']}', style: const TextStyle(color: Colors.white70)),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 20),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.white70),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditarCliente(
+                                  clientId: widget.clientId,
+                                  clientData: data,  // Pasa los datos del cliente actual a la pantalla de edición
+                                ),
+                              ),
+                           );
+                            // Aquí iría la lógica para editar el cliente
+                            print('Editar cliente: ${snapshot.data!.id}');
+                          },
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
