@@ -184,7 +184,7 @@ class _DashboardState extends State<Dashboard> {
                               width: 200.w,
                               height: 150.h,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
+                               borderRadius: BorderRadius.circular(18),
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -251,8 +251,8 @@ class _DashboardState extends State<Dashboard> {
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                              return Center(
+                                  child: CircularProgressIndicator(color: Colors.blue[700],));
                             } else if (snapshot.hasError) {
                               return const Center(
                                   child: Text('Error al cargar los pagos'));
@@ -429,7 +429,7 @@ class TotalMes extends StatelessWidget {
       stream: _getPagosDelMesStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(color: Colors.blue[700]));
         }
 
         if (snapshot.hasError) {
@@ -515,7 +515,7 @@ class TotalDia extends StatelessWidget {
       stream: _getPagosDelDia(), // Usamos el nuevo stream de pagos del día
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(color: Colors.blue[700]));
         } else if (snapshot.hasError) {
           return const Center(child: Text('Error al cargar los pagos'));
         }

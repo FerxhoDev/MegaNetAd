@@ -3,20 +3,20 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart'; // Para manejar fechas y meses
+
+  
+
 
 class Cliente {
   final String id;
   final String nombre;
-  final String plan;
-  final bool alDia; // true si está al día, false si no lo está
 
-  Cliente(this.id, this.nombre, this.plan, this.alDia);
+  Cliente(this.id, this.nombre);
 }
-
 
 class Clients extends StatefulWidget {
   const Clients({super.key});
-  
 
   @override
   _ClientsState createState() => _ClientsState();
@@ -24,142 +24,158 @@ class Clients extends StatefulWidget {
 
 class _ClientsState extends State<Clients> {
 
-  
-  List<Cliente> clientes = [];
-  List<Cliente> filteredClientes = []; // Lista para filtrar los clientes
-  String searchQuery = ''; // Consulta de búsqueda
-
-  @override
-  void initState() {
-    super.initState();
-    _getClientes(); // Llama la función para obtener los clientes
-  }
-
-  Future<void> _getClientes() async {
-    List<Cliente> fetchedClientes = [];
-
+   Future<List<Map<String, dynamic>>> getClientes() async {
+    List<Map<String, dynamic>> clientes = [];
+    
     try {
-      // Obtener todos los clientes
-      QuerySnapshot clientesSnapshot = await FirebaseFirestore.instance.collection('clientes').get();
+      QuerySnapshot clientesSnapshot = await FirebaseFirestore.instance
+          .collection('clientes')
+          .get();
 
-      // Obtener el mes actual
-      DateTime now = DateTime.now();
-      int currentMonth = now.month;
+      DateTime fechaActual = DateTime.now();
+      String mesActual = '${obtenerNombreMes(fechaActual.month - 1)} ${fechaActual.year}';
 
       for (var doc in clientesSnapshot.docs) {
-        String idCliente = doc.id;
-        String nombre = doc['nombre'];
-        String plan = doc['plan_nombre'];
+        String clientId = doc.id;
+        Map<String, dynamic> clientData = doc.data() as Map<String, dynamic>;
 
-        // Verificar los pagos de la subcolección Pagos para este cliente
         QuerySnapshot pagosSnapshot = await FirebaseFirestore.instance
             .collection('clientes')
-            .doc(idCliente)
+            .doc(clientId)
             .collection('Pagos')
-            .where('mespago', isEqualTo: currentMonth.toString()) // Filtrar por mes actual
+            .orderBy('fecha_pago', descending: true)
             .get();
 
-        // Determinar si está al día
-        bool alDia = pagosSnapshot.docs.isNotEmpty;
+        if (pagosSnapshot.docs.isNotEmpty) {
+          List<Map<String, dynamic>> pagos = pagosSnapshot.docs
+              .map((e) => e.data() as Map<String, dynamic>)
+              .toList();
 
-        // Crear la instancia de Cliente
-        fetchedClientes.add(Cliente(idCliente, nombre, plan, alDia));
+          bool estaAlDia = verificarPagosAlDia(pagos, mesActual);
+          String ultimoPagoMes = pagos.first['mespago'];
+
+          clientes.add({
+            'id': clientId,
+            'nombre': clientData['nombre'],
+            'ultimoPago': ultimoPagoMes,
+            'estaAlDia': estaAlDia,
+          });
+        } else {
+          clientes.add({
+            'id': clientId,
+            'nombre': clientData['nombre'],
+            'ultimoPago': 'Sin pagos',
+            'estaAlDia': false,
+          });
+        }
       }
     } catch (e) {
       print('Error al obtener clientes: $e');
     }
 
-    setState(() {
-      clientes = fetchedClientes;
-      filteredClientes = fetchedClientes; // Inicialmente muestra todos los clientes
-    });
+    return clientes;
   }
 
-  void _filterClientes(String query) {
-    final filtered = clientes.where((cliente) {
-      return cliente.nombre.toLowerCase().contains(query.toLowerCase());
-    }).toList();
+  bool verificarPagosAlDia(List<Map<String, dynamic>> pagos, String mesActual) {
+    if (pagos.isEmpty) return false;
 
-    setState(() {
-      searchQuery = query;
-      filteredClientes = filtered;
-    });
+    String ultimoPagoMes = pagos.first['mespago'];
+    return compararMeses(ultimoPagoMes, mesActual) >= 0;
+  }
+
+  int compararMeses(String mes1, String mes2) {
+    List<String> partes1 = mes1.split(' ');
+    List<String> partes2 = mes2.split(' ');
+
+    int anio1 = int.parse(partes1[1]);
+    int anio2 = int.parse(partes2[1]);
+
+    if (anio1 != anio2) {
+      return anio1.compareTo(anio2);
+    }
+
+    int indiceMes1 = obtenerIndiceMes(partes1[0]);
+    int indiceMes2 = obtenerIndiceMes(partes2[0]);
+
+    return indiceMes1.compareTo(indiceMes2);
+  }
+
+  String obtenerMesAnterior(String mes) {
+    List<String> partes = mes.split(' ');
+    int indiceMes = obtenerIndiceMes(partes[0]);
+    int anio = int.parse(partes[1]);
+
+    if (indiceMes == 0) {
+      return 'Diciembre ${anio - 1}';
+    } else {
+      return '${obtenerNombreMes(indiceMes - 1)} $anio';
+    }
+  }
+
+  int obtenerIndiceMes(String mes) {
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return meses.indexOf(mes);
+  }
+
+  String obtenerNombreMes(int mes) {
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return meses[mes];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 37, 37, 37),
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white70),
+        title: const Text('Estado de Clientes', style: TextStyle(color: Colors.white70),),
         backgroundColor: const Color.fromARGB(255, 37, 37, 37),
-        title: const Text(
-          'Clientes',
-          style: TextStyle(color: Colors.white70),
-        ),
-        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white70),
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 20.h),
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 20.w),
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 50, 50, 50),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: CupertinoSearchTextField(
-              backgroundColor: Colors.transparent,
-              placeholder: 'Buscar cliente',
-              style: const TextStyle(color: Colors.white70),
-              onChanged: _filterClientes, // Filtra clientes cuando cambia el texto
-            ),
-          ),
-          SizedBox(height: 20.h),
-          Expanded(
-            // Lista de clientes con ListView.builder
-            child: ListView.builder(
-              itemCount: filteredClientes.length,
-              itemBuilder: (context, index) {
-                final cliente = filteredClientes[index];
-                return Card(
-                  color: const Color.fromARGB(255, 50, 50, 50),
-                  margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                  child: ListTile(
-                    title: Text(
-                      cliente.nombre,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    subtitle: Text(
-                      cliente.plan,
-                      style: const TextStyle(color: Colors.white60),
-                    ),
-                    trailing: Icon(
-                      cliente.alDia ? Icons.check_circle : Icons.warning,
-                      color: cliente.alDia ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      backgroundColor: const Color.fromARGB(255, 26, 26, 26),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: getClientes(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: Colors.blue[700],));
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No hay clientes', style: TextStyle(color: Colors.white)));
+          }
+
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              var cliente = snapshot.data![index];
+              return ListTile(
+                leading: Icon(
+                  cliente['estaAlDia'] ? Icons.check_circle : Icons.warning,
+                  color: cliente['estaAlDia'] ? Colors.green : Colors.orange,
+                ),
+                title: Text(cliente['nombre'], style: const TextStyle(color: Colors.white)),
+                subtitle: Text('Último pago: ${cliente['ultimoPago']}', style: const TextStyle(color: Colors.white70)),
+                onTap: () {
+                  // Aquí puedes navegar a la pantalla de detalles del cliente si lo deseas
+                },
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromRGBO(13, 71, 161, 1),
-        ),
         onPressed: () {
           context.goNamed('AddClients');
         },
-        label: const Text(
-          'Agregar Cliente',
-          style: TextStyle(color: Colors.white60),
-        ),
-        icon: const Icon(
-          Icons.group_add_rounded,
-          color: Colors.white70,
+        label: const Text('Agregar Cliente', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.people_alt_outlined, color: Colors.white),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromRGBO(35, 122, 252, 1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
       ),
     );
