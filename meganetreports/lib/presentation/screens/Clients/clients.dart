@@ -1,12 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart'; // Para manejar fechas y meses
-
-  
-
 
 class Cliente {
   final String id;
@@ -23,8 +18,37 @@ class Clients extends StatefulWidget {
 }
 
 class _ClientsState extends State<Clients> {
+  List<Map<String, dynamic>> _allClientes = [];
+  List<Map<String, dynamic>> _filteredClientes = [];
+  String _searchQuery = '';
 
-   Future<List<Map<String, dynamic>>> getClientes() async {
+  @override
+  void initState() {
+    super.initState();
+    _loadClientes();
+  }
+
+  Future<void> _loadClientes() async {
+    _allClientes = await getClientes();
+    _filteredClientes = _allClientes;
+    setState(() {});
+  }
+
+  void _filterClientes(String query) {
+    setState(() {
+      _searchQuery = query;
+      if (query.isEmpty) {
+        _filteredClientes = _allClientes;
+      } else {
+        _filteredClientes = _allClientes
+            .where((cliente) =>
+                cliente['nombre'].toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getClientes() async {
     List<Map<String, dynamic>> clientes = [];
     
     try {
@@ -132,40 +156,49 @@ class _ClientsState extends State<Clients> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Estado de Clientes', style: TextStyle(color: Colors.white70),),
+        title: const Text('Clientes', style: TextStyle(color: Colors.white70),),
         backgroundColor: const Color.fromARGB(255, 37, 37, 37),
         iconTheme: const IconThemeData(color: Colors.white70),
       ),
       backgroundColor: const Color.fromARGB(255, 26, 26, 26),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: getClientes(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: Colors.blue[700],));
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No hay clientes', style: TextStyle(color: Colors.white)));
-          }
-
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              var cliente = snapshot.data![index];
-              return ListTile(
-                leading: Icon(
-                  cliente['estaAlDia'] ? Icons.check_circle : Icons.warning,
-                  color: cliente['estaAlDia'] ? Colors.green : Colors.orange,
-                ),
-                title: Text(cliente['nombre'], style: const TextStyle(color: Colors.white)),
-                subtitle: Text('Último pago: ${cliente['ultimoPago']}', style: const TextStyle(color: Colors.white70)),
-                onTap: () {
-                  // Aquí puedes navegar a la pantalla de detalles del cliente si lo deseas
-                },
-              );
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: CupertinoSearchTextField(
+              placeholder: 'Buscar cliente',
+              style: const TextStyle(color: Colors.white),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              onChanged: _filterClientes,
+            ),
+          ),
+          Expanded(
+            child: _allClientes.isEmpty
+                ? Center(child: CircularProgressIndicator(color: Colors.blue[700]))
+                : _filteredClientes.isEmpty
+                    ? Center(child: Text('No se encontraron clientes', style: TextStyle(color: Colors.white)))
+                    : ListView.builder(
+                        itemCount: _filteredClientes.length,
+                        itemBuilder: (context, index) {
+                          var cliente = _filteredClientes[index];
+                          return ListTile(
+                            leading: Icon(
+                              cliente['estaAlDia'] ? Icons.check_circle : Icons.warning,
+                              color: cliente['estaAlDia'] ? Colors.green : Colors.orange,
+                            ),
+                            title: Text(cliente['nombre'], style: const TextStyle(color: Colors.white)),
+                            subtitle: Text('Último pago: ${cliente['ultimoPago']}', style: const TextStyle(color: Colors.white70)),
+                            onTap: () {
+                              // Aquí puedes navegar a la pantalla de detalles del cliente si lo deseas
+                            },
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
       floatingActionButton: ElevatedButton.icon(
         onPressed: () {
