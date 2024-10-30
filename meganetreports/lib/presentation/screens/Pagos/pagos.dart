@@ -4,13 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+
+final TextEditingController _descuentoController = TextEditingController();
+final TextEditingController _descDescuentoController = TextEditingController();
+
+
 Future<void> savePayment({
   required String clientId, // ID del cliente
   required DateTime fechaPago, // Fecha y hora del pago
   required String mesPago, // Mes del pago (ejemplo: "Septiembre 2024")
-  String? descuento, // Descuento opcional (ejemplo: "50")
-  String? descDescuento, // Descripción del descuento opcional
-  required String total, // Total del pago
+  required String precioOriginal,
+  required TextEditingController descuentoController,
+  required TextEditingController descDescuentoController,
 }) async {
   try {
     // Referencia a la subcolección 'Pagos' del cliente
@@ -19,17 +24,21 @@ Future<void> savePayment({
         .doc(clientId)
         .collection('Pagos');
 
+    double precioOriginalDouble = double.parse(precioOriginal);
+    double descuento = double.tryParse(descuentoController.text) ?? 0;
+    double total = precioOriginalDouble - descuento;
     // Estructura de los datos del pago
     Map<String, dynamic> pagoData = {
       'fecha_pago': fechaPago,
       'mespago': mesPago,
-      'total': total,
+      'total': total.toString(),
+      'precio_original': precioOriginal,
     };
 
     // Si hay un descuento, lo añadimos
-    if (descuento != null && descuento.isNotEmpty) {
-      pagoData['descuento'] = descuento;
-      pagoData['descdescuento'] = descDescuento ?? '';
+    if (descuento > 0) {
+      pagoData['descuento'] = descuentoController.text;
+      pagoData['descdescuento'] = descDescuentoController.text;
     }
 
     // Guardar el pago en Firestore
@@ -160,6 +169,55 @@ class PagoScreen extends StatelessWidget {
                       SizedBox(height: 100.h),
                       GestureDetector(
                         onTap: () {
+                          if(_descuentoController.text.isNotEmpty && _descDescuentoController.text.isEmpty){
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  icon: const Icon(Icons.error_outline_rounded,
+                                      color: Color.fromRGBO(35, 122, 252, 1)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 37, 37, 37),
+                                  title: const Text('Error', style: TextStyle(color: Colors.white70),),
+                                  content: const Text(
+                                      'Por favor, ingrese el concepto del descuento', style: TextStyle(color: Colors.white70),),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Aceptar', style: TextStyle(color: Colors.blue),),
+                                    ),
+                                  ],
+                                );
+                              });
+                            return;
+                          }else if(_descuentoController.text.isEmpty && _descDescuentoController.text.isNotEmpty){
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  icon: const Icon(Icons.error_outline_rounded,
+                                      color: Color.fromRGBO(35, 122, 252, 1)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 37, 37, 37),
+                                  title: const Text('Error', style: TextStyle(color: Colors.white70),),
+                                  content: const Text(
+                                      'Por favor, ingrese el Descuento', style: TextStyle(color: Colors.white70),),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Aceptar', style: TextStyle(color: Colors.blue),),
+                                    ),
+                                  ],
+                                );
+                              });
+                            return;
+                          }
                           showDialog(
                               context: context,
                               builder: (context) {
@@ -189,7 +247,9 @@ class PagoScreen extends StatelessWidget {
                                           clientId: clientId,
                                           fechaPago: DateTime.now(),
                                           mesPago: siguienteMes,
-                                          total: precio,
+                                          descDescuentoController: _descDescuentoController,
+                                          descuentoController: _descuentoController,
+                                          precioOriginal: precio,
                                         );
                                         Navigator.pop(context);
                                       },
@@ -303,10 +363,11 @@ class InfoClient extends StatelessWidget {
   }
 }
 
-class Infopago extends StatelessWidget {
+class Infopago extends StatefulWidget {
   final String plan;
   final String precio;
   final Map<String, dynamic> mes;
+
   const Infopago({
     super.key,
     required this.plan,
@@ -315,11 +376,42 @@ class Infopago extends StatelessWidget {
   });
 
   @override
+  State<Infopago> createState() => _InfopagoState();
+}
+
+class _InfopagoState extends State<Infopago> {
+  late double _total;
+  bool _descuentoAplicado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _total = double.parse(widget.precio);
+    _descuentoController.addListener(_updateTotal);
+  }
+  @override
+void dispose() {
+  // Elimina el listener antes de descartar el widget
+  _descuentoController.removeListener(_updateTotal);
+  super.dispose();
+}
+
+
+  void _updateTotal() {
+    setState(() {
+      double descuento = double.tryParse(_descuentoController.text) ?? 0;
+      _total = double.parse(widget.precio) - descuento;
+      _descuentoAplicado = descuento > 0;
+    });
+  }
+
+
+  @override
   Widget build(BuildContext context) {
-    final mesPagoAnterior = mes['mespago'] ?? 'N/A';
+    final mesPagoAnterior = widget.mes['mespago'] ?? 'N/A';
     String siguienteMes = getNextMonth(mesPagoAnterior);
     return Container(
-      height: 330.h,
+      height: 570.h,
       width: 660.w,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
@@ -334,13 +426,13 @@ class Infopago extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    Text('Plan: $plan',
+                    Text('Plan: ${widget.plan}',
                         style: TextStyle(
                             color: Colors.white60,
                             fontSize: 32.sp,
                             fontWeight: FontWeight.bold)),
                     Text(
-                      'Q$precio.00',
+                      'Q${widget.precio}.00',
                       style: TextStyle(
                           color: Colors.white60,
                           fontSize: 55.sp,
@@ -398,6 +490,7 @@ class Infopago extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.only(left: 20.w),
                         child: TextFormField(
+                          controller: _descuentoController,
                           decoration: InputDecoration(
                             hintText: 'Q 0.00',
                             hintStyle: TextStyle(
@@ -414,6 +507,7 @@ class Infopago extends StatelessWidget {
                         ),
                       ),
                     ),
+                    
                   ],
                 ),
                 SizedBox(
@@ -433,7 +527,7 @@ class Infopago extends StatelessWidget {
                       width: 10.w,
                     ),
                     Text(
-                      'Q$precio',
+                      'Q${_total.toStringAsFixed(2)}',
                       style: TextStyle(
                           color: Colors.green,
                           fontSize: 30.sp,
@@ -443,6 +537,58 @@ class Infopago extends StatelessWidget {
                 )
               ],
             ),
+            SizedBox(
+                      height: 15.h,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20.0),
+                      child: Text(
+                        'Descripción:',
+                        style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 25.sp,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 5.h,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20.0, right: 10.0),
+                      child: Container(
+                        width:680.w,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.r),
+                          color: Colors.grey[800],
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 20.w),
+                          child: TextFormField(
+                            controller: _descDescuentoController,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              hintText: 'Por concepto de...',
+                              hintStyle: TextStyle(
+                                  color: Colors.white38,),
+                              border: InputBorder.none, // Sin borde visible
+                              enabledBorder:
+                                  InputBorder.none, // Para cuando está habilitado
+                              focusedBorder:
+                                  InputBorder.none, // Para cuando está en foco
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor, ingrese una descripción del descuento';
+                              }
+                              return null;
+                            },
+                            style: const TextStyle(
+                                color: Colors
+                                    .white60), // Para que el texto sea blanco
+                          ),
+                        ),
+                      ),
+                    ),
           ],
         ),
       ),
