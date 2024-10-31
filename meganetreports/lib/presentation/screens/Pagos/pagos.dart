@@ -42,7 +42,10 @@ Future<void> savePayment({
     }
 
     // Guardar el pago en Firestore
-    await pagosRef.add(pagoData);
+    await pagosRef.add(pagoData).then((value) {
+      _descDescuentoController.clear();
+      _descuentoController.clear();
+    });
     print('Pago guardado correctamente');
   } catch (e) {
     print('Error al guardar el pago: $e');
