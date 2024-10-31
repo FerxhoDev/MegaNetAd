@@ -86,11 +86,10 @@ class _DetalleclientState extends State<Detalleclient> {
                               MaterialPageRoute(
                                 builder: (context) => EditarCliente(
                                   clientId: widget.clientId,
-                                  clientData: data,  // Pasa los datos del cliente actual a la pantalla de edición
+                                  clientData: data,
                                 ),
                               ),
-                           );
-                            // Aquí iría la lógica para editar el cliente
+                            );
                             print('Editar cliente: ${snapshot.data!.id}');
                           },
                         ),
@@ -120,20 +119,36 @@ class _DetalleclientState extends State<Detalleclient> {
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: snapshot.data!.docs.length,
                     itemBuilder: (context, index) {
-                      var pago = snapshot.data!.docs[index];
+                      var pago = snapshot.data!.docs[index].data() as Map<String, dynamic>;
                       return Card(
                         color: Colors.grey[850],
                         child: ListTile(
                           title: Text('Mes: ${pago['mespago']}', style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(
-                            'Fecha: ${DateFormat('dd/MM/yyyy').format((pago['fecha_pago'] as Timestamp).toDate())}\nTotal: \Q${pago['total']}',
-                            style: const TextStyle(color: Colors.white70),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Fecha: ${DateFormat('dd/MM/yyyy').format((pago['fecha_pago'] as Timestamp).toDate())}\n'
+                                'Total: \Q${pago['total']}\n'
+                                'Precio Original: \Q${pago['precio_original']}',
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                              if (pago.containsKey('descuento') && pago['descuento'] != null)
+                                Text(
+                                  'Descuento: \Q${pago['descuento']}',
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                              if (pago.containsKey('descdescuento') && pago['descdescuento'] != null && pago['descdescuento'].isNotEmpty)
+                                Text(
+                                  'Descripción: ${pago['descdescuento']}',
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                            ],
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.edit, color: Colors.white70),
                             onPressed: () {
-                              // Aquí iría la lógica para editar el pago
-                              print('Editar pago: ${pago.id}');
+                              print('Editar pago: ${snapshot.data!.docs[index].id}');
                             },
                           ),
                         ),
