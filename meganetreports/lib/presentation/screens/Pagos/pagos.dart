@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 
 final TextEditingController _descuentoController = TextEditingController();
@@ -167,7 +166,7 @@ class PagoScreen extends StatelessWidget {
                     children: [
                       SizedBox(height: 20.h),
                       Infopago(plan: plan, precio: precio, mes: ultimoPago),
-                      SizedBox(height: 20.h),
+                      //SizedBox(height: 20.h),
                       InfoClient(nombre: nombre),
                       SizedBox(height: 100.h),
                       GestureDetector(

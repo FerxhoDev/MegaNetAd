@@ -12,9 +12,7 @@ class Plan {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is Plan &&
-        other.name == name &&
-        other.price == price;
+    return other is Plan && other.name == name && other.price == price;
   }
 
   @override
@@ -32,6 +30,7 @@ class _AddClientsState extends State<AddClients> {
   // Controladores de los campos
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController firstPaymonth = TextEditingController();
   final TextEditingController firstPay = TextEditingController();
 
   // Variable para almacenar el plan seleccionado
@@ -39,7 +38,8 @@ class _AddClientsState extends State<AddClients> {
 
   // Método para obtener los planes de Firestore
   Future<List<Plan>> _fetchPlans() async {
-    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('planes').get();
+    QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('planes').get();
     return snapshot.docs.map((doc) {
       return Plan(
         name: doc['nombre'] as String,
@@ -49,56 +49,65 @@ class _AddClientsState extends State<AddClients> {
   }
 
   // Función para guardar cliente en Firestore
-Future<void> _saveClient() async {
-  if (nameController.text.isEmpty || phoneController.text.isEmpty || selectedPlan == null || firstPay.text.isEmpty) {
-    // Muestra un mensaje de error si alguno de los campos está vacío
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Por favor, completa todos los campos.')),
-    );
-    return;
-  }
+  Future<void> _saveClient() async {
+    if (nameController.text.isEmpty ||
+        phoneController.text.isEmpty ||
+        selectedPlan == null ||
+        firstPay.text.isEmpty) {
+      // Muestra un mensaje de error si alguno de los campos está vacío
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, completa todos los campos.')),
+      );
+      return;
+    }
 
-  // Datos del cliente a guardar
-  Map<String, dynamic> clientData = {
-    'nombre': nameController.text,
-    'telefono': phoneController.text,
-    'plan_nombre': selectedPlan!.name,
-    'plan_precio': selectedPlan!.price,
-  };
-
-  try {
-    // Guarda el cliente en la colección 'clientes' de Firestore y obtiene el ID del documento recién creado
-    DocumentReference clientRef = await FirebaseFirestore.instance.collection('clientes').add(clientData);
-
-    // Ahora guarda la información del primer pago en la subcolección 'Pagos'
-    Map<String, dynamic> pagoData = {
-      'mespago': firstPay.text, // Guardar el mes de pago desde el controller
-      'fecha_pago': Timestamp.now(), // Timestamp con el horario actual
-      'total': selectedPlan!.price, // Precio del plan
+    // Datos del cliente a guardar
+    Map<String, dynamic> clientData = {
+      'nombre': nameController.text,
+      'telefono': phoneController.text,
+      'plan_nombre': selectedPlan!.name,
+      'plan_precio': selectedPlan!.price,
     };
 
-    // Agrega el pago a la subcolección 'Pagos' del cliente recién creado
-    await clientRef.collection('Pagos').add(pagoData);
+    try {
+      // Guarda el cliente en la colección 'clientes' de Firestore y obtiene el ID del documento recién creado
+      DocumentReference clientRef = await FirebaseFirestore.instance
+          .collection('clientes')
+          .add(clientData);
 
-    // Muestra un mensaje de éxito
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cliente y primer pago guardados exitosamente.')),
-    );
+      // Ahora guarda la información del primer pago en la subcolección 'Pagos'
+      Map<String, dynamic> pagoData = {
+        'mespago': firstPaymonth.text, // Guardar el mes de pago desde el controller
+        'fecha_pago': Timestamp.now(), // Timestamp con el horario actual
+        'precio_original': selectedPlan!.price, // Precio original del plan
+        'total': firstPay.text, // Precio del plan
+      };
 
-    // Limpia los campos después de guardar
-    nameController.clear();
-    phoneController.clear();
-    firstPay.clear(); // Limpia también el campo del primer pago
-    setState(() {
-      selectedPlan = null;
-    });
-  } catch (e) {
-    // En caso de error, muestra un mensaje de error
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al guardar cliente o pago: $e')),
-    );
+      // Agrega el pago a la subcolección 'Pagos' del cliente recién creado
+      await clientRef.collection('Pagos').add(pagoData);
+
+      // Muestra un mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Cliente y primer pago guardados exitosamente.')),
+      );
+
+      // Limpia los campos después de guardar
+      nameController.clear();
+      phoneController.clear();
+      firstPay.clear(); // Limpia también el campo del primer pago
+      firstPaymonth.clear(); // Limpia también el campo del mes de pago
+      setState(() {
+        selectedPlan = null;
+      });
+    } catch (e) {
+      // En caso de error, muestra un mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar cliente o pago: $e')),
+      );
+      print('Error al guardar cliente o pago: $e');
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -135,11 +144,14 @@ Future<void> _saveClient() async {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 30.h),
+                  SizedBox(height: 10.h),
                   // Campo para el nombre del cliente
                   const Text(
                     'Nombre',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -151,7 +163,9 @@ Future<void> _saveClient() async {
                       hintText: 'Ingresa el nombre del cliente',
                       hintStyle: TextStyle(color: Colors.grey),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color.fromRGBO(13, 71, 161, 1)), // Borde azul cuando tiene foco
+                        borderSide: BorderSide(
+                            color: Color.fromRGBO(13, 71, 161,
+                                1)), // Borde azul cuando tiene foco
                       ),
                     ),
                     style: const TextStyle(color: Colors.white),
@@ -161,7 +175,10 @@ Future<void> _saveClient() async {
                   // Selector de Plan
                   const Text(
                     'Seleccionar Plan',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                   const SizedBox(height: 8),
 
@@ -185,25 +202,31 @@ Future<void> _saveClient() async {
                           focusedBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(10)),
                             borderSide: BorderSide(
-                              color: Color.fromRGBO(13, 71, 161, 1), // Borde azul cuando tiene foco
+                              color: Color.fromRGBO(13, 71, 161,
+                                  1), // Borde azul cuando tiene foco
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: const BorderRadius.all(Radius.circular(10)),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
                             borderSide: BorderSide(
-                              color: Colors.grey.shade600, // Borde gris cuando no tiene foco
+                              color: Colors.grey
+                                  .shade600, // Borde gris cuando no tiene foco
                               width: 1.0,
                             ),
                           ),
                           border: const OutlineInputBorder(),
                         ),
-                        dropdownColor: const Color.fromRGBO(45, 45, 53, 1), // Color de fondo de las opciones
+                        dropdownColor: const Color.fromRGBO(
+                            45, 45, 53, 1), // Color de fondo de las opciones
                         value: selectedPlan,
                         hint: const Text(
                           'Selecciona un plan',
                           style: TextStyle(color: Colors.grey),
                         ),
-                        style: const TextStyle(color: Colors.white), // Color del texto de las opciones
+                        style: const TextStyle(
+                            color: Colors
+                                .white), // Color del texto de las opciones
                         onChanged: (Plan? newValue) {
                           setState(() {
                             selectedPlan = newValue;
@@ -214,7 +237,9 @@ Future<void> _saveClient() async {
                             value: plan,
                             child: Text(
                               '${plan.name} - Q${plan.price}', // Muestra el nombre y el precio
-                              style: const TextStyle(color: Colors.white), // Color del texto dentro de las opciones
+                              style: const TextStyle(
+                                  color: Colors
+                                      .white), // Color del texto dentro de las opciones
                             ),
                           );
                         }).toList(),
@@ -227,7 +252,10 @@ Future<void> _saveClient() async {
                   // Campo para el teléfono
                   const Text(
                     'Teléfono',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -240,7 +268,9 @@ Future<void> _saveClient() async {
                       hintText: 'Ingresa el número de teléfono',
                       hintStyle: TextStyle(color: Colors.grey),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color.fromRGBO(13, 71, 161, 1)), // Borde azul cuando tiene foco
+                        borderSide: BorderSide(
+                            color: Color.fromRGBO(13, 71, 161,
+                                1)), // Borde azul cuando tiene foco
                       ),
                     ),
                     style: const TextStyle(color: Colors.white),
@@ -250,7 +280,39 @@ Future<void> _saveClient() async {
                   // Campo para el teléfono
                   const Text(
                     'Primer mes Pagado',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: firstPaymonth,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                      hintText: 'Septiembre 2024',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Color.fromRGBO(13, 71, 161,
+                                1)), // Borde azul cuando tiene foco
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Campo para el teléfono
+                  const Text(
+                    'Total primer pago',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -260,16 +322,18 @@ Future<void> _saveClient() async {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(10)),
                       ),
-                      hintText: 'Septiembre 2024',
+                      hintText: 'Q 70.00',
                       hintStyle: TextStyle(color: Colors.grey),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color.fromRGBO(13, 71, 161, 1)), // Borde azul cuando tiene foco
+                        borderSide: BorderSide(
+                            color: Color.fromRGBO(13, 71, 161,
+                                1)), // Borde azul cuando tiene foco
                       ),
                     ),
                     style: const TextStyle(color: Colors.white),
                   ),
 
-                  SizedBox(height: 60.h),
+                  SizedBox(height: 40.h),
 
                   // Botón para guardar
                   Center(
@@ -281,7 +345,8 @@ Future<void> _saveClient() async {
                       onPressed: _saveClient, // Llama a la función para guardar
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromRGBO(13, 71, 161, 1),
-                        padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 30.w, vertical: 20.h),
                       ),
                       label: const Text(
                         'Guardar Cliente',
@@ -289,7 +354,7 @@ Future<void> _saveClient() async {
                       ),
                     ),
                   ),
-                  SizedBox(height: 60.h),
+                  SizedBox(height: 40.h),
                 ],
               ),
             ),

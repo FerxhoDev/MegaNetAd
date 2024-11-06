@@ -21,31 +21,56 @@ class _ClientsState extends State<Clients> {
   List<Map<String, dynamic>> _allClientes = [];
   List<Map<String, dynamic>> _filteredClientes = [];
   String _searchQuery = '';
+  bool _isLoading = true;
+  bool _isMounted = false;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _loadClientes();
   }
 
+  @override
+  void dispose() {
+    _isMounted = false;
+    super.dispose();
+  }
+
   Future<void> _loadClientes() async {
-    _allClientes = await getClientes();
-    _filteredClientes = _allClientes;
-    setState(() {});
+    try {
+      final clientes = await getClientes();
+      if (_isMounted) {
+        setState(() {
+          _allClientes = clientes;
+          _filteredClientes = clientes;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (_isMounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      print('Error loading clientes: $e');
+    }
   }
 
   void _filterClientes(String query) {
-    setState(() {
-      _searchQuery = query;
-      if (query.isEmpty) {
-        _filteredClientes = _allClientes;
-      } else {
-        _filteredClientes = _allClientes
-            .where((cliente) =>
-                cliente['nombre'].toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
+    if (_isMounted) {
+      setState(() {
+        _searchQuery = query;
+        if (query.isEmpty) {
+          _filteredClientes = _allClientes;
+        } else {
+          _filteredClientes = _allClientes
+              .where((cliente) =>
+                  cliente['nombre'].toLowerCase().contains(query.toLowerCase()))
+              .toList();
+        }
+      });
+    }
   }
 
   Future<List<Map<String, dynamic>>> getClientes() async {
@@ -176,7 +201,7 @@ class _ClientsState extends State<Clients> {
             ),
           ),
           Expanded(
-            child: _allClientes.isEmpty
+            child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: Colors.blue[700]))
                 : _filteredClientes.isEmpty
                     ? const Center(child: Text('No se encontraron clientes', style: TextStyle(color: Colors.white)))
@@ -192,13 +217,12 @@ class _ClientsState extends State<Clients> {
                             title: Text(cliente['nombre'], style: const TextStyle(color: Colors.white)),
                             subtitle: Text('Último pago: ${cliente['ultimoPago']}', style: const TextStyle(color: Colors.white70)),
                             onTap: () {
-                               // Navegar a la pantalla de detalle del cliente, pasando el clientId
                               context.go('/home/clients/DetalleClients/${cliente['id']}');
                             },
                             trailing: IconButton(
-  icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
-  onPressed: () => context.go('/home/clients/DetalleClients/${cliente['id']}'),
-),
+                              icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+                              onPressed: () => context.go('/home/clients/DetalleClients/${cliente['id']}'),
+                            ),
                           );
                         },
                       ),
