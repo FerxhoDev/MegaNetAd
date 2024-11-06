@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:meganetreports/presentation/screens/ticket/ticket.dart';
 
 
 final TextEditingController _descuentoController = TextEditingController();
@@ -148,6 +149,7 @@ class PagoScreen extends StatelessWidget {
             final nombre = clientData['nombre'] ?? 'Cliente Desconocido';
             final plan = clientData['plan_nombre'] ?? 'Plan Desconocido';
             final precio = clientData['plan_precio'] ?? '0.00';
+            final telefono = clientData['telefono'] ?? 'Sin teléfono';
             final ultimoPago = clientData['ultimo_pago'] ?? {};
             return Column(
               children: [
@@ -254,6 +256,16 @@ class PagoScreen extends StatelessWidget {
                                           precioOriginal: precio,
                                         );
                                         Navigator.pop(context);
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => TicketSend(
+                                          nombre: nombre,
+                                          plan: plan,
+                                          precio: precio,
+                                          telefono: telefono,
+                                          mesPago: siguienteMes,
+                                          total: _descuentoController.text.isNotEmpty ? _descuentoController.text : precio,
+                                          descuento: _descuentoController.text,
+                                          descripcion: _descDescuentoController.text,
+                                        )));
                                       },
                                       child: const Text('Aceptar', style: TextStyle(color: Colors.blue)),
                                     ),
