@@ -145,13 +145,8 @@ class _DetalleclientState extends State<Detalleclient> {
                                 ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.white70),
-                            onPressed: () {
-                              print('Editar pago: ${snapshot.data!.docs[index].id}');
-                            },
+                          trailing: const Icon(Icons.check, color: Colors.green),
                           ),
-                        ),
                       );
                     },
                   );
