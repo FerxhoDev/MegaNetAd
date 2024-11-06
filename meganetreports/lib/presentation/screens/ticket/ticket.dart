@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -93,7 +94,7 @@ class _TicketSendState extends State<TicketSend> {
                   _buildInfoRow('Mes de Pago', widget.mesPago),
                   _buildInfoRow('Descuento', widget.descuento != null ? '-Q${widget.descuento}' : 'Q0.00'),
                   const Divider(thickness: 2),
-                  _buildInfoRow('Total', 'Q${widget.precio}', isTotal: true),
+                  _buildInfoRow('Total', 'Q${widget.total}', isTotal: true),
                   if (widget.descripcion != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),
@@ -104,8 +105,16 @@ class _TicketSendState extends State<TicketSend> {
                     ),
                   const SizedBox(height: 20),
                   Text ('Generado en, Caserío Nueva Jerusalem, San Antonio S, S.M. $fechaFormateada', style: const TextStyle(color: Colors.grey),),
-                  
                   const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      const Text('Mega', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                      const Text('Net', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                      SizedBox(width: 10.h),
+                      const Icon(Icons.qr_code, size: 35, color: Colors.grey),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -121,7 +130,7 @@ class _TicketSendState extends State<TicketSend> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(
             value,
             style: TextStyle(
@@ -149,7 +158,7 @@ ${widget.descripcion != null ? '\nDescripción: ${widget.descripcion}' : ''}
 
     Clipboard.setData(ClipboardData(text: ticketDetails));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Detalles del ticket copiados al portapapeles')),
+      const SnackBar(content: Text('Detalles del ticket copiados al portapapeles')),
     );
   }
 }

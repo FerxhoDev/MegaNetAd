@@ -243,6 +243,10 @@ class PagoScreen extends StatelessWidget {
                                     ),
                                     TextButton(
                                       onPressed: () {
+                                        // Calcular el total
+                                        double precioOriginalDouble = double.parse(precio);
+                                        double descuento = double.tryParse(_descuentoController.text) ?? 0;
+                                        double total = precioOriginalDouble - descuento;
                                         String mesPagoAnterior =
                                             ultimoPago['mespago'] ?? '';
                                         String siguienteMes =
@@ -262,7 +266,7 @@ class PagoScreen extends StatelessWidget {
                                           precio: precio,
                                           telefono: telefono,
                                           mesPago: siguienteMes,
-                                          total: _descuentoController.text.isNotEmpty ? _descuentoController.text : precio,
+                                          total: total.toString(),
                                           descuento: _descuentoController.text,
                                           descripcion: _descDescuentoController.text,
                                         )));
