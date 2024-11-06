@@ -149,7 +149,7 @@ class PagoScreen extends StatelessWidget {
             final nombre = clientData['nombre'] ?? 'Cliente Desconocido';
             final plan = clientData['plan_nombre'] ?? 'Plan Desconocido';
             final precio = clientData['plan_precio'] ?? '0.00';
-            final telefono = clientData['telefono'] ?? 'Sin teléfono';
+            final telefono = clientData['telefono'] ?? 'Sin Teléfono';
             final ultimoPago = clientData['ultimo_pago'] ?? {};
             return Column(
               children: [

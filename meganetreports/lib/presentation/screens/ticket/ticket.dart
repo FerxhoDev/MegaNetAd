@@ -93,7 +93,7 @@ class _TicketSendState extends State<TicketSend> {
                   _buildInfoRow('Mes de Pago', widget.mesPago),
                   _buildInfoRow('Descuento', widget.descuento != null ? '-Q${widget.descuento}' : 'Q0.00'),
                   const Divider(thickness: 2),
-                  _buildInfoRow('Total', 'Q${widget.total}', isTotal: true),
+                  _buildInfoRow('Total', 'Q${widget.precio}', isTotal: true),
                   if (widget.descripcion != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),
