@@ -8,7 +8,7 @@ import 'package:meganetreports/presentation/screens/DashBoard/dashboard.dart';
 import 'package:meganetreports/presentation/screens/Pagos/listPagoClients.dart';
 import 'package:meganetreports/presentation/screens/Pagos/pagos.dart';
 import 'package:meganetreports/presentation/screens/Planes/planes.dart';
-import 'package:meganetreports/presentation/screens/Unautorized/Unaautorized.dart';
+import 'package:meganetreports/presentation/screens/Users/UsersPlat.dart';
 import 'package:meganetreports/presentation/screens/fotgotpassword/forgotpassword.dart';
 import 'package:meganetreports/presentation/screens/login/components/login.dart';
 import 'package:meganetreports/presentation/screens/signup/signup.dart';
@@ -56,6 +56,11 @@ final GoRouter appRouter = GoRouter(
             return const Dashboard();
           },
           routes: [
+            GoRoute(
+                path: 'users',
+                name: 'Users',
+                builder: (BuildContext context, GoRouterState state) => const UserManagementScreen(),
+              ),
             GoRoute(
               path: 'ListPago',
               name: 'ListPago',

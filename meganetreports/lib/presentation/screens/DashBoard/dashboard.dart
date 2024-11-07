@@ -392,6 +392,16 @@ Future<void> fetchUserDetails() async {
               )),
         ],
       )),
+      floatingActionButton: userRole == 'Administrador'
+          ? FloatingActionButton.extended(
+            backgroundColor: const Color.fromRGBO(35, 122, 252, 1),
+            onPressed: () {
+               context.goNamed('Users');
+            },
+            icon: const Icon(Icons.group_add_outlined, color: Colors.white,),
+            label: const Text('Usuario', style: TextStyle(color: Colors.white),),
+          )
+          : null,
     );
   }
 }
