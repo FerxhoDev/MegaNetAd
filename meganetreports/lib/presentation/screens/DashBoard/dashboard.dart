@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:meganetreports/Provider/appProvider.dart';
+import 'package:provider/provider.dart';
 
 Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosDelDia() {
   DateTime startOfDay =
@@ -30,6 +33,8 @@ Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosDelMesStream() {
 }
 
 
+
+
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
@@ -40,34 +45,91 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   User? user;
   String? userName;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? userRole;
+
+Future<void> _logout(BuildContext context) async {
+  try {
+    final authProvider = Provider.of<AuthProviders>(context, listen: false);
+    await authProvider.signOut();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sesión cerrada correctamente.')),
+      );
+      context.go('/');
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cerrar sesión: ${e.toString()}')),
+      );
+    }
+  }
+}
+
+Future<void> fetchUserDetails() async {
+  final userDetails = await fetchUserNameAndRole();
+    if (userDetails != null && mounted) {
+      setState(() {
+        String name = userDetails['name']!;
+        // Si el nombre tiene más de 15 caracteres, lo recortamos y añadimos '...'
+        userName = name.length > 15 ? '${name.substring(0, 15)}...' : name;
+        userRole = userDetails['role'];
+      });
+    }
+  }
+
+  
+
+  Future<Map<String, String>?> fetchUserNameAndRole() async {
+    try {
+      // Obtiene el correo del usuario actual logueado
+      final String? userEmail = FirebaseAuth.instance.currentUser?.email;
+      
+      if (userEmail == null) {
+        print('No hay un usuario logueado.');
+        return null; // Retorna null si no hay un usuario logueado
+      }
+
+      // Realiza la consulta en la colección `usersperm` para obtener los campos `name` y `rol`
+      final snapshot = await FirebaseFirestore.instance
+          .collection('usersperm')
+          .where('email', isEqualTo: userEmail)
+          .limit(1) // Limita la consulta a 1 documento ya que el email es único
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        print('Usuario no encontrado en la colección usersperm.');
+        return null; // Retorna null si no se encuentra el documento
+      }
+
+      // Accede a los datos del primer documento encontrado
+      final userDoc = snapshot.docs.first;
+      final String name = userDoc['name'] as String;
+      final String role = userDoc['rol'] as String;
+
+      // Retorna el nombre y el rol como un mapa
+      return {
+        'name': name,
+        'role': role,
+      };
+    } catch (e) {
+      print('Error al obtener el nombre y rol del usuario: $e');
+      return null; // Retorna null en caso de error
+    }
+  }
+
+
 
   @override
   void initState() {
     super.initState();
     user = FirebaseAuth.instance.currentUser;
-    _getUserName();
+    fetchUserDetails();
   }
 
-  Future<void> _getUserName() async {
-    if (user != null) {
-      // Accede a Firestore para obtener el documento del usuario
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .get();
-
-      if (userDoc.exists) {
-        setState(() {
-          userName = userDoc['name']; // Asigna el nombre del usuario
-        });
-      } else {
-        setState(() {
-          userName =
-              "Unknown User"; // Valor por defecto si el documento no existe
-        });
-      }
-    }
-  }
+  
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _getPagosConClientesStream() {
     return FirebaseFirestore.instance.collection('clientes').snapshots();
@@ -114,8 +176,9 @@ class _DashboardState extends State<Dashboard> {
                 IconButton(
                   onPressed: () {
                     // Cerrar sesión
-                    FirebaseAuth.instance.signOut();
-                    context.go('/');
+                    _logout(context);
+                    // ir a login Login()
+                    context.goNamed('root');
                   },
                   icon: const Icon(
                     Icons.logout,

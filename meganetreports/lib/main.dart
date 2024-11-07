@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:meganetreports/Provider/appProvider.dart';
 import 'package:meganetreports/config/router/app_router.dart';
+import 'package:provider/provider.dart';
 
 
 
@@ -23,7 +25,13 @@ void main () async{
 
   :await Firebase.initializeApp();
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProviders()),
+      ],
+      child:
+    const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

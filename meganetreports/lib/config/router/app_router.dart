@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meganetreports/Provider/appProvider.dart';
 import 'package:meganetreports/presentation/screens/Clients/addClient.dart';
 import 'package:meganetreports/presentation/screens/Clients/clients.dart';
 import 'package:meganetreports/presentation/screens/Clients/detalleClient.dart';
@@ -10,6 +11,7 @@ import 'package:meganetreports/presentation/screens/Planes/planes.dart';
 import 'package:meganetreports/presentation/screens/fotgotpassword/forgotpassword.dart';
 import 'package:meganetreports/presentation/screens/login/components/login.dart';
 import 'package:meganetreports/presentation/screens/signup/signup.dart';
+import 'package:provider/provider.dart';
 
 
 final GoRouter appRouter = GoRouter(
@@ -17,9 +19,14 @@ final GoRouter appRouter = GoRouter(
   routes: <RouteBase>[
     GoRoute(
       path: '/',
-      name: '/',
+      name: 'root',
       builder: (BuildContext context, GoRouterState state) {
-        return const Login();
+        final AuthProviders authProvider  = Provider.of<AuthProviders>(context);
+          if (authProvider.user == null) {
+            return const Login();
+          } else {
+            return const Dashboard();
+          }
       },
       routes: [
         GoRoute(

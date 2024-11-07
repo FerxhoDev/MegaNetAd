@@ -1,8 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 //import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:meganetreports/Provider/appProvider.dart';
+import 'package:provider/provider.dart';
+import 'package:sign_in_button/sign_in_button.dart';
 //import 'package:go_router/go_router.dart';
 
 class BodyWhite extends StatefulWidget {
@@ -18,6 +23,64 @@ class _BodyWhiteState extends State<BodyWhite> {
   // Text controllers
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  String? _selectedRole;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  Future<void> _handleSignIn(BuildContext context) async {
+    try {
+      await _googleSignIn.signOut();
+      
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        final QuerySnapshot result = await FirebaseFirestore.instance
+            .collection('usersperm')
+            .where('email', isEqualTo: user.email)
+            .limit(1)
+            .get();
+
+        if (result.docs.isNotEmpty) {
+          if (!mounted) return;
+          // Actualizar el estado de autenticación en el Provider
+          Provider.of<AuthProviders>(context, listen: false).setUser(user);
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Este correo no está autorizado para iniciar sesión.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          await _auth.signOut();
+          await _googleSignIn.signOut();
+        }
+      }
+    } catch (e) {
+      print('Error durante el inicio de sesión: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+          content: Text('Ocurrió un error durante el inicio de sesión. $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+
+
 
   Future signIn() async {
     try {
@@ -150,50 +213,15 @@ class _BodyWhiteState extends State<BodyWhite> {
                 ),
               ),
             ),
-
-            /*InkWell(
-              
-              onTap: () {},
-              child: Container(
-                height: 100.h,
-                margin: EdgeInsets.symmetric(
-                  horizontal: 110.w,
-                ),
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(50),
-                    color: Colors.blue[800]),
-                child: Center(
-                    child: Text(
-                  'Login',
-                  style: TextStyle(
-                      fontSize: 35.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                )),
-              ),
-            ),*/
             SizedBox(
-  height: 150.h,
-),
-GestureDetector(
-  onTap: () {
-    // Navegar a la pantalla de registro
-    context.go('/signup');
-  },
-  child: const Row(
-    children: [
-      Text(
-        'Crearme una Cuenta',
-        style: TextStyle(
-            color: Colors.grey, fontWeight: FontWeight.bold),
-      ),
-      Icon(
-        Icons.arrow_forward_ios_sharp,
-        color: Colors.grey,
-      )
-    ],
-  ),
-),
+              height: 20.h,
+            ),
+            SignInButton(
+                      Buttons.google,
+                      text: 'Iniciar con Google',
+                      onPressed: () => _handleSignIn(context),
+                    ),
+
           ],
         ),
       ),
