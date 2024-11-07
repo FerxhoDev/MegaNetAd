@@ -8,6 +8,7 @@ import 'package:meganetreports/presentation/screens/DashBoard/dashboard.dart';
 import 'package:meganetreports/presentation/screens/Pagos/listPagoClients.dart';
 import 'package:meganetreports/presentation/screens/Pagos/pagos.dart';
 import 'package:meganetreports/presentation/screens/Planes/planes.dart';
+import 'package:meganetreports/presentation/screens/Unautorized/Unaautorized.dart';
 import 'package:meganetreports/presentation/screens/fotgotpassword/forgotpassword.dart';
 import 'package:meganetreports/presentation/screens/login/components/login.dart';
 import 'package:meganetreports/presentation/screens/signup/signup.dart';
@@ -24,7 +25,10 @@ final GoRouter appRouter = GoRouter(
         final AuthProviders authProvider  = Provider.of<AuthProviders>(context);
           if (authProvider.user == null) {
             return const Login();
-          } else {
+          } else if (authProvider.isAuthorized) {
+            // Muestra un mensaje o una pantalla de "No autorizado"
+          return const Dashboard();
+          }else{
             return const Dashboard();
           }
       },
