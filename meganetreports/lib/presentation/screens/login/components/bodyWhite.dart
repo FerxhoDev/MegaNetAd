@@ -81,7 +81,7 @@ class _BodyWhiteState extends State<BodyWhite> {
 
 
 
-  Future signIn() async {
+  /*Future signIn() async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text, password: _passwordController.text);
@@ -102,7 +102,88 @@ class _BodyWhiteState extends State<BodyWhite> {
         );
       }
     }
+  }*/
+
+  Future<void> signIn(BuildContext context) async {
+  try {
+    // Intenta iniciar sesión con Firebase Auth
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    // Si el inicio de sesión es exitoso, verifica si el usuario está autorizado
+    if (userCredential.user != null) {
+      bool isAuthorized = await checkUserAuthorization(userCredential.user!.email);
+      
+      if (isAuthorized) {
+        // El usuario está autorizado, actualiza el Provider y navega al dashboard
+        if (context.mounted) {
+          Provider.of<AuthProviders>(context, listen: false).setUser(userCredential.user);
+          context.go('/home');
+        }
+      } else {
+        // El usuario no está autorizado
+        if (context.mounted) {
+          await FirebaseAuth.instance.signOut();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Este correo no está autorizado para iniciar sesión.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  } on FirebaseAuthException catch (e) {
+    if (context.mounted) {
+      if (e.code == 'user-not-found') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay usuario para este correo.'),
+          ),
+        );
+      } else if (e.code == 'wrong-password') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contraseña incorrecta.'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de autenticación: ${e.message}'),
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error inesperado: $e'),
+        ),
+      );
+    }
   }
+}
+
+Future<bool> checkUserAuthorization(String? email) async {
+  if (email == null) return false;
+
+  try {
+    final QuerySnapshot result = await FirebaseFirestore.instance
+        .collection('usersperm')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    return result.docs.isNotEmpty;
+  } catch (e) {
+    print('Error al verificar la autorización del usuario: $e');
+    return false;
+  }
+}
 
   @override
   void dispose() {
@@ -193,7 +274,7 @@ class _BodyWhiteState extends State<BodyWhite> {
                   color: Colors.blue[800],
                   child: InkWell(
                     onTap: () {
-                      signIn();
+                      signIn(context);
                     },
                     child: Padding(
                       padding: EdgeInsets.symmetric(
